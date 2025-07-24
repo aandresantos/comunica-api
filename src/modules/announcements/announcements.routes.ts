@@ -1,9 +1,12 @@
 import { FastifyInstance, FastifyRequest } from "fastify";
-import { AnnouncementsService, IAnnouncementsService } from "./service";
+import {
+  AnnouncementsService,
+  IAnnouncementsService,
+} from "./announcements.service";
 import {
   AnnouncementsRepository,
   IAnnouncementsRepository,
-} from "./repository";
+} from "./announcements.repository";
 
 const repository: IAnnouncementsRepository = new AnnouncementsRepository();
 const service: IAnnouncementsService = new AnnouncementsService(repository);

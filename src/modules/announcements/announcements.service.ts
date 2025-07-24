@@ -1,9 +1,7 @@
-import { IAnnouncementsRepository } from "./repository";
-import { Channel, StatusAnnouncement } from "./types/announcements.types";
-
-export interface IAnnouncementsService {
-  listAnnouncements: () => Promise<any>;
-}
+import {
+  IAnnouncementsRepository,
+  IAnnouncementsService,
+} from "./announcements.interfaces";
 
 export class AnnouncementsService implements IAnnouncementsService {
   private announcementsRepository: IAnnouncementsRepository;

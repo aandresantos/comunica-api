@@ -3,7 +3,7 @@ import fastifySwagger from "@fastify/swagger";
 import fastifySwaggerUi from "@fastify/swagger-ui";
 
 import { config } from "@configs/app.config";
-import { announcementsRoutes } from "@announcements/routes";
+import { announcementsRoutes } from "@src/modules/announcements/announcements.routes";
 
 export const buildApp = () => {
   const app = fastify({ logger: true });

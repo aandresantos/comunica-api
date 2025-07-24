@@ -1,8 +1,5 @@
-import { Channel, StatusAnnouncement } from "./types/announcements.types";
-
-export interface IAnnouncementsRepository {
-  getAll: () => Promise<any>;
-}
+import { IAnnouncementsRepository } from "./announcements.interfaces";
+import { Channel, StatusAnnouncement } from "./announcements.types";
 
 export class AnnouncementsRepository implements IAnnouncementsRepository {
   async getAll() {
