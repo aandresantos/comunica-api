@@ -1,4 +1,4 @@
-export enum Status {
+export enum StatusResponse {
   SUCCESS = "success",
   ERROR = "error",
   EXCEPTION = "exception",
@@ -8,13 +8,16 @@ export enum Status {
 export type SuccessResponse<T> = {
   data: T;
   success: true;
-  status: Status.SUCCESS;
+  status: StatusResponse.SUCCESS;
 };
 
 export type ErrorResponse = {
   success: false;
   errors: string[];
-  status: Status.ERROR | Status.UNAUTHORIZED | Status.EXCEPTION;
+  status:
+    | StatusResponse.ERROR
+    | StatusResponse.UNAUTHORIZED
+    | StatusResponse.EXCEPTION;
 };
 
 export type BaseResponse<T> = SuccessResponse<T> | ErrorResponse;

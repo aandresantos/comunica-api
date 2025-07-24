@@ -9,7 +9,7 @@
     "paths": {
       "@src/*": ["./*"],
       "@types/*": ["./lib/types/*"],
-
+      "@configs/*": ["./lib/configs/*"],
       "@announcements/*": ["./modules/announcements/*"],
     },
     "esModuleInterop": true,
