@@ -1,8 +1,15 @@
 import { FastifyInstance } from "fastify";
+import { AnnouncementsService, IAnnouncementsService } from "./service";
+import {
+  AnnouncementsRepository,
+  IAnnouncementsRepository,
+} from "./repository";
 
-// TODO: por o BaseResponse aqui
+const repository: IAnnouncementsRepository = new AnnouncementsRepository();
+const service: IAnnouncementsService = new AnnouncementsService(repository);
+
 export async function announcementsRoutes(app: FastifyInstance) {
   app.get("/", async () => {
-    return { data: "Chamados" };
+    return service.listAnnouncements();
   });
 }
