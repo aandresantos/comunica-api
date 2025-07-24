@@ -1,0 +1,23 @@
+services:
+  comunica_db:
+    container_name: comunica_db_dev
+    image: postgres:16.9
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: pwd123
+      POSTGRES_DB: comunicadb
+    ports:
+      - "5432:5432"
+    volumes:
+      - comunicadb_data:/var/lib/postgresql/data
+    restart: on-failure
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user"]
+      interval: 5m
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+volumes:
+   comunicadb_data:
+    name: comunicadb_data_dev
