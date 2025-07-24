@@ -1,13 +1,16 @@
 import Fastify, { FastifyInstance } from "fastify";
-
-const server: FastifyInstance = Fastify({});
-
-server.get("/", async (request, reply) => {
-  return { data: "ta rodando :P" };
-});
+import { buildApp } from "./app";
+import { config } from "./lib/configs/app.config";
 
 const start = async () => {
-  await server.listen({ port: 3000 });
+  const app = buildApp();
+
+  try {
+    await app.listen({
+      host: config.app.host,
+      port: config.app.port,
+    });
+  } catch (e) {}
 };
 
 start();
