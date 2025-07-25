@@ -7,8 +7,12 @@ import {
 } from "./announcements.interfaces";
 import { createAnnouncementDto } from "./dtos/create-annoucement.dto";
 import { validateBody } from "@middlewares/body-validator.middleware";
+import { database } from "@src/lib/configs/database.config";
 
-const repository: IAnnouncementsRepository = new AnnouncementsRepository();
+// TODO: mover repo e service pra um module
+const repository: IAnnouncementsRepository = new AnnouncementsRepository(
+  database
+);
 const service: IAnnouncementsService = new AnnouncementsService(repository);
 
 export async function announcementsRoutes(app: FastifyInstance) {
