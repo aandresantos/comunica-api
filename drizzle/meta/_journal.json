@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1753405055451,
+      "tag": "0000_create_announcements_schema",
+      "breakpoints": true
+    }
+  ]
+}

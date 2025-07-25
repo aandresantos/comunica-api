@@ -1,12 +1,12 @@
 import { FastifyInstance, FastifyRequest } from "fastify";
+import { AnnouncementsService } from "./announcements.service";
+import { AnnouncementsRepository } from "./announcements.repository";
 import {
-  AnnouncementsService,
-  IAnnouncementsService,
-} from "./announcements.service";
-import {
-  AnnouncementsRepository,
   IAnnouncementsRepository,
-} from "./announcements.repository";
+  IAnnouncementsService,
+} from "./announcements.interfaces";
+import { createAnnouncementDto } from "./dtos/create-annoucement.dto";
+import { validateBody } from "@middlewares/body-validator.middleware";
 
 const repository: IAnnouncementsRepository = new AnnouncementsRepository();
 const service: IAnnouncementsService = new AnnouncementsService(repository);
@@ -23,13 +23,15 @@ export async function announcementsRoutes(app: FastifyInstance) {
     return { data: id };
   });
 
-  app.post("/", async (req, reply) => {
-    const { body } = req.body as FastifyRequest<{
-      Body: { id: string };
-    }>;
+  app.post(
+    "/",
+    { preHandler: validateBody(createAnnouncementDto) },
+    async (req, reply) => {
+      const body = req.body;
 
-    return { data: "criado com sucesso" };
-  });
+      return { data: "criado com sucesso" };
+    }
+  );
 
   app.post("/:id", async (req, reply) => {
     const { id } = req.params as FastifyRequest<{ Params: { id: string } }>;
