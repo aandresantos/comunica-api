@@ -12,6 +12,7 @@
       "@types/*": ["./shared/types/*"],
       "@configs/*": ["./lib/configs/*"],
       "@middlewares/*": ["./shared/middlewares/*"],
+      "@handlers/*": ["./shared/handlers/*"],
       "@announcements/*": ["./modules/announcements/*"],
     },
     "esModuleInterop": true,
@@ -19,6 +20,6 @@
     "strict": true,
     "skipLibCheck": true
   },
-  "include": ["src", "src/lib/configs/drizzle.config.ts"],
+  "include": ["src", "src/lib/configs/drizzle.config.ts", "src/shared/middlewares/.middleware.ts"],
   "exclude": ["node_modules", "dist"]
 }

@@ -13,6 +13,7 @@ import { validateBody } from "@middlewares/body-validator.middleware";
 import { database } from "@src/lib/configs/database.config";
 import { NewAnnouncement } from "./announcements.schema";
 import { AnnouncementMapper } from "./annoucements.mapper";
+import { errorHandler } from "@src/shared/handlers/error.handler";
 
 // TODO: mover repo e service pra um module
 const repository: IAnnouncementsRepository = new AnnouncementsRepository(
