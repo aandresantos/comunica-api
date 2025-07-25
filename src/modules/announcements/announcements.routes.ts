@@ -5,9 +5,14 @@ import {
   IAnnouncementsRepository,
   IAnnouncementsService,
 } from "./announcements.interfaces";
-import { createAnnouncementDto } from "./dtos/create-annoucement.dto";
+import {
+  CreateAnnouncementDto,
+  createAnnouncementDto,
+} from "./dtos/create-annoucement.dto";
 import { validateBody } from "@middlewares/body-validator.middleware";
 import { database } from "@src/lib/configs/database.config";
+import { NewAnnouncement } from "./announcements.schema";
+import { AnnouncementMapper } from "./annoucements.mapper";
 
 // TODO: mover repo e service pra um module
 const repository: IAnnouncementsRepository = new AnnouncementsRepository(
@@ -15,40 +20,58 @@ const repository: IAnnouncementsRepository = new AnnouncementsRepository(
 );
 const service: IAnnouncementsService = new AnnouncementsService(repository);
 
+// TODO: criar controller
 export async function announcementsRoutes(app: FastifyInstance) {
-  // TODO: implementar camada de handler
   app.get("/", async () => {
     return service.listAnnouncements();
   });
 
   app.get("/:id", async (req, reply) => {
-    const { id } = req.params as FastifyRequest<{ Params: { id: string } }>;
+    const { id } = req.params as { id: string };
 
-    return { data: id };
+    const announcement = await service.getAnnouncementById(id);
+    if (!announcement) {
+      return reply.status(404).send({ message: "Anúncio não encontrado" });
+    }
+
+    return announcement;
   });
 
   app.post(
     "/",
     { preHandler: validateBody(createAnnouncementDto) },
     async (req, reply) => {
-      const body = req.body;
+      const body = req.body as CreateAnnouncementDto;
 
-      return { data: "criado com sucesso" };
+      const created = await service.createAnnouncement(
+        AnnouncementMapper.toDomain(body)
+      );
+
+      return reply.status(201).send(AnnouncementMapper.toViewModel(created));
     }
   );
 
-  app.post("/:id", async (req, reply) => {
-    const { id } = req.params as FastifyRequest<{ Params: { id: string } }>;
-    const { body } = req.body as FastifyRequest<{
-      Body: { id: string };
-    }>;
+  //TODO: adicionar validações
+  app.put("/:id", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const data = req.body as any;
 
-    return { data: "atualizado com sucesso" };
+    const updated = await service.updateAnnouncement(id, data);
+    if (!updated) {
+      return reply.status(404).send({ message: "Anúncio não encontrado" });
+    }
+
+    return updated;
   });
 
   app.delete("/:id", async (req, reply) => {
-    const { id } = req.params as FastifyRequest<{ Params: { id: string } }>;
+    const { id } = req.params as { id: string };
 
-    return { data: "deletado com sucesso" };
+    try {
+      await service.deleteAnnouncement(id);
+      return reply.status(204).send();
+    } catch (error) {
+      return reply.status(404).send({ message: "Anúncio não encontrado" });
+    }
   });
 }

@@ -1,9 +1,10 @@
-import { Announcement } from "./announcements.schema";
+import { Announcement, NewAnnouncement } from "./announcements.schema";
 import {
   ChannelType,
   StatusAnnouncement,
   StatusAnnouncementType,
 } from "./announcements.types";
+import { CreateAnnouncementDto } from "./dtos/create-annoucement.dto";
 
 export interface AnnouncementViewModel {
   id: string;
@@ -43,5 +44,15 @@ export class AnnouncementMapper {
     announcements: Announcement[]
   ): AnnouncementViewModel[] {
     return announcements.map((announcement) => this.toViewModel(announcement));
+  }
+
+  public static toDomain(dto: CreateAnnouncementDto): NewAnnouncement {
+    return {
+      title: dto.titulo,
+      content: dto.conteudo,
+      channelType: dto.tipo_canal,
+      status: "draft",
+      author: dto.autor,
+    };
   }
 }

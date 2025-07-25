@@ -13,4 +13,11 @@ export interface IAnnouncementsRepository {
 
 export interface IAnnouncementsService {
   listAnnouncements: () => Promise<Announcement[]>;
+  getAnnouncementById: (id: string) => Promise<Announcement | null>;
+  createAnnouncement: (data: NewAnnouncement) => Promise<Announcement>;
+  updateAnnouncement: (
+    id: string,
+    data: Partial<NewAnnouncement>
+  ) => Promise<Announcement | null>;
+  deleteAnnouncement: (id: string) => Promise<void>;
 }

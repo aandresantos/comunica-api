@@ -6,7 +6,7 @@ import {
   announcementsTable,
   NewAnnouncement,
 } from "./announcements.schema";
-import { eq } from "drizzle-orm";
+import { eq, isNull } from "drizzle-orm";
 
 export class AnnouncementsRepository implements IAnnouncementsRepository {
   // TODO: adicionar tx e throw
@@ -14,7 +14,10 @@ export class AnnouncementsRepository implements IAnnouncementsRepository {
   constructor(private database: PostgresJsDatabase) {}
 
   async getAll() {
-    const rows = await this.database.select().from(announcementsTable);
+    const rows = await this.database
+      .select()
+      .from(announcementsTable)
+      .where(isNull(announcementsTable.deletedAt));
 
     if (!rows.length) {
       return [];
