@@ -7,8 +7,8 @@ export const Channel = {
 export type ChannelType = (typeof Channel)[keyof typeof Channel];
 
 export const StatusAnnouncement = {
-  SENT: "enviado",
-  DRAFT: "rascunho",
+  SENT: "sent",
+  DRAFT: "draft",
 } as const;
 
 export type StatusAnnouncementType =

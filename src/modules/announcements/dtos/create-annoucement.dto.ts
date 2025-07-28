@@ -18,4 +18,4 @@ export const createAnnouncementDto = zod.object({
   autor: zod.string().nonempty({ message: "O autor é obrigatório." }),
 });
 
-export type CreateAnnouncementDto = zod.infer<typeof createAnnouncementDto>;
+export type CreateAnnouncement = zod.infer<typeof createAnnouncementDto>;

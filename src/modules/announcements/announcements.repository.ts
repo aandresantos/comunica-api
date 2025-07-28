@@ -1,29 +1,41 @@
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { IAnnouncementsRepository } from "./announcements.interfaces";
-import { Channel, StatusAnnouncement } from "./announcements.types";
 import {
   Announcement,
   announcementsTable,
   NewAnnouncement,
 } from "./announcements.schema";
-import { eq, isNull } from "drizzle-orm";
+import { and, count, eq, gte, isNull, lte } from "drizzle-orm";
+import { AnnouncementRepositoryFilters } from "./types/client-announcements.types";
 
 export class AnnouncementsRepository implements IAnnouncementsRepository {
   // TODO: adicionar tx e throw
 
   constructor(private database: PostgresJsDatabase) {}
 
-  async getAll() {
-    const rows = await this.database
-      .select()
-      .from(announcementsTable)
-      .where(isNull(announcementsTable.deletedAt));
+  async getAll(query: AnnouncementRepositoryFilters) {
+    const { limit, offset } = query;
 
-    if (!rows.length) {
-      return [];
-    }
+    const conditions = this.buildConditions(query);
 
-    return rows;
+    const [rows, total] = await Promise.all([
+      this.database
+        .select()
+        .from(announcementsTable)
+        .where(and(...conditions))
+        .limit(Number(limit))
+        .offset(Number(offset)),
+
+      this.database
+        .select({ count: count() })
+        .from(announcementsTable)
+        .where(and(...conditions)),
+    ]);
+
+    return {
+      total: Number(total[0]?.count || 0),
+      data: rows,
+    };
   }
 
   async getById(id: string) {
@@ -57,5 +69,28 @@ export class AnnouncementsRepository implements IAnnouncementsRepository {
       .update(announcementsTable)
       .set({ deletedAt: new Date() })
       .where(eq(announcementsTable.id, id));
+  }
+
+  private buildConditions(filters: AnnouncementRepositoryFilters) {
+    const { status, tipo_canal, autor, data_inicial, data_final } = filters;
+
+    const conditions = [isNull(announcementsTable.deletedAt)];
+
+    if (status) conditions.push(eq(announcementsTable.status, status));
+
+    if (tipo_canal)
+      conditions.push(eq(announcementsTable.channelType, tipo_canal));
+
+    if (autor) conditions.push(eq(announcementsTable.author, autor));
+
+    if (data_inicial)
+      conditions.push(
+        gte(announcementsTable.createdAt, new Date(data_inicial))
+      );
+
+    if (data_final)
+      conditions.push(lte(announcementsTable.createdAt, new Date(data_final)));
+
+    return conditions;
   }
 }

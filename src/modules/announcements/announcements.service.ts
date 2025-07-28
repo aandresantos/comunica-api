@@ -1,20 +1,42 @@
+import { AnnouncementMapper } from "./annoucements.mapper";
 import { IAnnouncementsService } from "./announcements.interfaces";
 import { IAnnouncementsRepository } from "./announcements.interfaces";
 import { Announcement, NewAnnouncement } from "./announcements.schema";
+import { ListAnnouncementsQuery } from "./dtos/list-announcements-query.dto";
+import { AnnouncementRepositoryFilters } from "./types/client-announcements.types";
 
 export class AnnouncementsService implements IAnnouncementsService {
   constructor(private repository: IAnnouncementsRepository) {}
 
-  async listAnnouncements(): Promise<Announcement[]> {
-    return this.repository.getAll();
+  async listAnnouncements(query: ListAnnouncementsQuery) {
+    const status = query.status
+      ? AnnouncementMapper.mapStatusClientToDb(query.status)
+      : undefined;
+
+    const createdAt = query.data_inicial
+      ? query.data_inicial.toISOString()
+      : undefined;
+
+    const deletedAt = query.data_final
+      ? query.data_final.toISOString()
+      : undefined;
+
+    const filters = {
+      ...query,
+      status: status,
+      data_inicial: createdAt,
+      data_final: deletedAt,
+    };
+
+    return await this.repository.getAll(filters);
   }
 
   async getAnnouncementById(id: string): Promise<Announcement | null> {
-    return this.repository.getById(id);
+    return await this.repository.getById(id);
   }
 
   async createAnnouncement(data: NewAnnouncement): Promise<Announcement> {
-    return this.repository.create(data);
+    return await this.repository.create(data);
   }
 
   async updateAnnouncement(
@@ -26,7 +48,7 @@ export class AnnouncementsService implements IAnnouncementsService {
       return null;
     }
 
-    return this.repository.update(id, data);
+    return await this.repository.update(id, data);
   }
 
   async deleteAnnouncement(id: string): Promise<void> {

@@ -3,15 +3,19 @@ import {
   ChannelType,
   StatusAnnouncement,
   StatusAnnouncementType,
-} from "./announcements.types";
-import { CreateAnnouncementDto } from "./dtos/create-annoucement.dto";
+} from "./types/announcements.types";
+import { CreateAnnouncement } from "./dtos/create-annoucement.dto";
+import {
+  StatusAnnouncementClient,
+  StatusAnnouncementClientType,
+} from "./types/client-announcements.types";
 
 export interface AnnouncementViewModel {
   id: string;
   titulo: string;
   conteudo: string;
   tipo_canal: ChannelType;
-  status: StatusAnnouncementType;
+  status: StatusAnnouncementClientType;
   data_criacao: string;
   data_envio: string | null;
   autor: string;
@@ -19,16 +23,33 @@ export interface AnnouncementViewModel {
 }
 
 export class AnnouncementMapper {
-  public static toViewModel(announcement: Announcement): AnnouncementViewModel {
-    const statusToUpper =
-      announcement.status.toLocaleUpperCase() as keyof typeof StatusAnnouncement;
+  public static mapStatusClientToDb(
+    status: StatusAnnouncementClientType
+  ): StatusAnnouncementType {
+    const map: Record<StatusAnnouncementClientType, StatusAnnouncementType> = {
+      [StatusAnnouncementClient.SENT]: StatusAnnouncement.SENT,
+      [StatusAnnouncementClient.DRAFT]: StatusAnnouncement.DRAFT,
+    };
+    return map[status];
+  }
 
+  public static mapStatusDbToClient(
+    status: StatusAnnouncementType
+  ): StatusAnnouncementClientType {
+    const map: Record<StatusAnnouncementType, StatusAnnouncementClientType> = {
+      [StatusAnnouncement.SENT]: StatusAnnouncementClient.SENT,
+      [StatusAnnouncement.DRAFT]: StatusAnnouncementClient.DRAFT,
+    };
+    return map[status];
+  }
+
+  public static toViewModel(announcement: Announcement): AnnouncementViewModel {
     return {
       id: announcement.id,
       titulo: announcement.title,
       conteudo: announcement.content,
       tipo_canal: announcement.channelType,
-      status: StatusAnnouncement[statusToUpper] || StatusAnnouncement.SENT,
+      status: this.mapStatusDbToClient(announcement.status),
       autor: announcement.author,
       data_criacao: announcement.createdAt.toISOString(),
       data_envio: announcement.sentAt
@@ -46,12 +67,12 @@ export class AnnouncementMapper {
     return announcements.map((announcement) => this.toViewModel(announcement));
   }
 
-  public static toDomain(dto: CreateAnnouncementDto): NewAnnouncement {
+  public static toDomain(dto: CreateAnnouncement): NewAnnouncement {
     return {
       title: dto.titulo,
       content: dto.conteudo,
       channelType: dto.tipo_canal,
-      status: "draft",
+      status: StatusAnnouncement.DRAFT,
       author: dto.autor,
     };
   }

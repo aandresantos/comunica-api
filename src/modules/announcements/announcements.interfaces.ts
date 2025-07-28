@@ -1,7 +1,11 @@
 import { Announcement, NewAnnouncement } from "./announcements.schema";
+import { ListAnnouncementsQuery } from "./dtos/list-announcements-query.dto";
+import { AnnouncementRepositoryFilters } from "./types/client-announcements.types";
 
 export interface IAnnouncementsRepository {
-  getAll: () => Promise<Announcement[]>;
+  getAll: (
+    query: AnnouncementRepositoryFilters
+  ) => Promise<{ total: number; data: Announcement[] }>;
   getById: (id: string) => Promise<Announcement | null>;
   create: (data: NewAnnouncement) => Promise<Announcement>;
   update: (
@@ -12,7 +16,9 @@ export interface IAnnouncementsRepository {
 }
 
 export interface IAnnouncementsService {
-  listAnnouncements: () => Promise<Announcement[]>;
+  listAnnouncements: (
+    query: ListAnnouncementsQuery
+  ) => Promise<{ total: number; data: Announcement[] }>;
   getAnnouncementById: (id: string) => Promise<Announcement | null>;
   createAnnouncement: (data: NewAnnouncement) => Promise<Announcement>;
   updateAnnouncement: (

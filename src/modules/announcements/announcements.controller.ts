@@ -1,14 +1,33 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { IAnnouncementsService } from "./announcements.interfaces";
-import { CreateAnnouncementDto } from "./dtos/create-annoucement.dto";
+import { CreateAnnouncement } from "./dtos/create-annoucement.dto";
 import { AnnouncementMapper } from "./annoucements.mapper";
+import { ListAnnouncementsQuery } from "./dtos/list-announcements-query.dto";
 
 export class AnnouncementsController {
   constructor(private service: IAnnouncementsService) {}
 
-  async getAll(req: FastifyRequest, reply: FastifyReply) {
-    const announcements = await this.service.listAnnouncements();
-    return reply.send(announcements.map(AnnouncementMapper.toViewModel));
+  async getAll(
+    req: FastifyRequest,
+    reply: FastifyReply,
+    query: ListAnnouncementsQuery
+  ) {
+    try {
+      const paginatedAnnouncements = await this.service.listAnnouncements(
+        query
+      );
+
+      const resultAsViewModel = AnnouncementMapper.toViewModelList(
+        paginatedAnnouncements.data
+      );
+
+      return reply.send({
+        data: resultAsViewModel,
+        total: paginatedAnnouncements.total,
+      });
+    } catch (err) {
+      console.log(err);
+    }
   }
 
   async getById(req: FastifyRequest, reply: FastifyReply) {
@@ -23,7 +42,7 @@ export class AnnouncementsController {
   }
 
   async create(req: FastifyRequest, reply: FastifyReply) {
-    const body = req.body as CreateAnnouncementDto;
+    const body = req.body as CreateAnnouncement;
 
     const created = await this.service.createAnnouncement(
       AnnouncementMapper.toDomain(body)
