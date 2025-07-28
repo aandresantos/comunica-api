@@ -52,9 +52,13 @@ export class AnnouncementsService implements IAnnouncementsService {
   }
 
   async deleteAnnouncement(id: string): Promise<void> {
-    const existing = await this.repository.getById(id);
-    if (!existing) {
+    const annoucement = await this.repository.getById(id);
+    if (!annoucement) {
       throw new Error("Chamado não encontrado");
+    }
+
+    if (annoucement.deletedAt) {
+      throw new Error("Chamado já deletado");
     }
 
     await this.repository.softDelete(id);

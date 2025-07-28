@@ -68,7 +68,14 @@ export class AnnouncementsRepository implements IAnnouncementsRepository {
     await this.database
       .update(announcementsTable)
       .set({ deletedAt: new Date() })
-      .where(eq(announcementsTable.id, id));
+      .where(
+        and(
+          ...[
+            eq(announcementsTable.id, id),
+            isNull(announcementsTable.deletedAt),
+          ]
+        )
+      );
   }
 
   private buildConditions(filters: AnnouncementRepositoryFilters) {
