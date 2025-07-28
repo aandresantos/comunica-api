@@ -8,32 +8,22 @@ export class AnnouncementsController {
   constructor(private service: IAnnouncementsService) {}
 
   async getAll(
-    req: FastifyRequest,
-    reply: FastifyReply,
-    query: ListAnnouncementsQuery
+    req: FastifyRequest<{ Querystring: ListAnnouncementsQuery }>,
+    reply: FastifyReply
   ) {
-    try {
-      const paginatedAnnouncements = await this.service.listAnnouncements(
-        query
-      );
+    const paginated = await this.service.listAnnouncements(req.query);
 
-      const resultAsViewModel = AnnouncementMapper.toViewModelList(
-        paginatedAnnouncements.data
-      );
-
-      return reply.send({
-        data: resultAsViewModel,
-        total: paginatedAnnouncements.total,
-      });
-    } catch (err) {
-      console.log(err);
-    }
+    return reply.status(200).send({
+      total: paginated.total,
+      data: AnnouncementMapper.toViewModelList(paginated.data),
+    });
   }
 
   async getById(req: FastifyRequest, reply: FastifyReply) {
     const { id } = req.params as { id: string };
 
     const announcement = await this.service.getAnnouncementById(id);
+
     if (!announcement) {
       return reply.status(404).send({ message: "Anúncio não encontrado" });
     }
