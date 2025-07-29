@@ -1,5 +1,12 @@
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { IAnnouncementsRepository } from "./announcements.interfaces";
+import {
+  CreateRepoArgs,
+  DeleteRepoArgs,
+  GetAllRepoArgs,
+  GetByIdRepoArgs,
+  IAnnouncementsRepository,
+  UpdateRepoArgs,
+} from "./announcements.interfaces";
 import {
   Announcement,
   announcementsTable,
@@ -13,7 +20,7 @@ export class AnnouncementsRepository implements IAnnouncementsRepository {
 
   constructor(private database: PostgresJsDatabase) {}
 
-  async getAll(query: AnnouncementRepositoryFilters) {
+  async getAll({ query }: GetAllRepoArgs) {
     const { limit, offset } = query;
 
     const conditions = this.buildConditions(query);
@@ -38,7 +45,7 @@ export class AnnouncementsRepository implements IAnnouncementsRepository {
     };
   }
 
-  async getById(id: string) {
+  async getById({ id }: GetByIdRepoArgs) {
     const found = await this.database
       .select()
       .from(announcementsTable)
@@ -47,7 +54,7 @@ export class AnnouncementsRepository implements IAnnouncementsRepository {
     return found[0] || null;
   }
 
-  async create(data: NewAnnouncement) {
+  async create({ data }: CreateRepoArgs) {
     const inserted = await this.database
       .insert(announcementsTable)
       .values(data)
@@ -55,7 +62,7 @@ export class AnnouncementsRepository implements IAnnouncementsRepository {
     return inserted[0];
   }
 
-  async update(id: string, data: Partial<Announcement>) {
+  async update({ id, data }: UpdateRepoArgs) {
     const updated = await this.database
       .update(announcementsTable)
       .set(data)
@@ -64,7 +71,7 @@ export class AnnouncementsRepository implements IAnnouncementsRepository {
     return updated[0] || null;
   }
 
-  async softDelete(id: string) {
+  async softDelete({ id }: DeleteRepoArgs) {
     await this.database
       .update(announcementsTable)
       .set({ deletedAt: new Date() })

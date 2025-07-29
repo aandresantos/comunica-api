@@ -13,19 +13,6 @@ export const buildApp = () => {
     logger: loggerOpts,
   });
 
-  app.addHook("onRequest", async (request, reply) => {
-    const traceId = (request.headers["x-trace-id"] as string) || randomUUID();
-    (request as any).traceId = traceId;
-    reply.header("x-trace-id", traceId);
-  });
-
-  app.addHook("onRequest", async (request) => {
-    request.log = request.log.child({
-      traceId: (request as any).traceId,
-      component: "api",
-    });
-  });
-
   app.setErrorHandler(errorHandler);
 
   app.register(fastifySwagger, swaggerConfig);

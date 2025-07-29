@@ -1,6 +1,13 @@
 import { FastifyRequest } from "fastify";
 
-import { IAnnouncementsService } from "./announcements.interfaces";
+import {
+  CreateServiceArgs,
+  DeleteServiceArgs,
+  GetByIdServiceArgs,
+  IAnnouncementsService,
+  ListServiceArgs,
+  UpdateServiceArgs,
+} from "./announcements.interfaces";
 import { CreateAnnouncement } from "./dtos/create-annoucement.dto";
 import {
   AnnouncementMapper,
@@ -24,7 +31,17 @@ export class AnnouncementsController {
   ): Promise<
     ControllerResponse<{ total: number; items: AnnouncementViewModel[] }>
   > {
-    const paginated = await this.service.listAnnouncements(req.query);
+    const logger = req.log.child({
+      operation: "getAll",
+      component: "AnnouncementsController",
+    });
+
+    const listArgs: ListServiceArgs = {
+      query: req.query,
+      context: { logger: req.log },
+    };
+
+    const paginated = await this.service.listAnnouncements(listArgs);
 
     return responseSuccess({
       total: paginated.total,
@@ -35,11 +52,23 @@ export class AnnouncementsController {
   async getById(
     req: FastifyRequest
   ): Promise<ControllerResponse<AnnouncementViewModel | null>> {
+    const logger = req.log.child({
+      operation: "getById",
+      component: "AnnouncementsController",
+    });
+
     const { id } = req.params as { id: string };
 
-    const announcement = await this.service.getAnnouncementById(id);
+    const getByIdArgs: GetByIdServiceArgs = {
+      id,
+      context: { logger: req.log },
+    };
+
+    const announcement = await this.service.getAnnouncementById(getByIdArgs);
 
     if (!announcement) {
+      logger.warn({ announcementId: id }, "Announcement not found.");
+
       return responseError(["Chamado não encontrado"], 404);
     }
 
@@ -49,38 +78,76 @@ export class AnnouncementsController {
   async create(
     req: FastifyRequest
   ): Promise<ControllerResponse<AnnouncementViewModel>> {
+    const logger = req.log.child({
+      operation: "create",
+      component: "AnnouncementsController",
+    });
+
     const body = req.body as CreateAnnouncement;
 
-    const created = await this.service.createAnnouncement(
-      AnnouncementMapper.toDomain(body)
-    );
+    const createArgs: CreateServiceArgs = {
+      data: AnnouncementMapper.toDomain(body),
+      context: { logger: req.log },
+    };
+
+    const created = await this.service.createAnnouncement(createArgs);
 
     return responseCreated(AnnouncementMapper.toViewModel(created));
   }
 
   async update(
-    req: FastifyRequest
+    req: FastifyRequest<{ Params: { id: string }; Body: UpdateAnnouncement }>
   ): Promise<ControllerResponse<AnnouncementViewModel | null>> {
-    const { id } = req.params as { id: string };
-    const data = req.body as UpdateAnnouncement;
+    const logger = req.log.child({
+      operation: "update",
+      component: "AnnouncementsController",
+    });
 
-    const updated = await this.service.updateAnnouncement(id, data);
+    const updateArgs: UpdateServiceArgs = {
+      id: req.params.id,
+      data: req.body,
+      context: { logger: req.log },
+    };
+
+    const updated = await this.service.updateAnnouncement(updateArgs);
+
     if (!updated) {
+      logger.warn(
+        { announcementId: req.params.id },
+        "Announcement to update was not found."
+      );
+
       return responseError(["Chamado não encontrado"], 404);
     }
 
     return responseSuccess(AnnouncementMapper.toViewModel(updated));
   }
 
-  async softDelete(req: FastifyRequest): Promise<ControllerResponse<null>> {
-    const { id } = req.params as { id: string };
+  async softDelete(
+    req: FastifyRequest<{ Params: { id: string } }>
+  ): Promise<ControllerResponse<null>> {
+    const logger = req.log.child({
+      operation: "softDelete",
+      component: "AnnouncementsController",
+    });
 
-    const existing = await this.service.getAnnouncementById(id);
+    const deleteArgs: DeleteServiceArgs = {
+      id: req.params.id,
+      context: { logger: req.log },
+    };
+
+    const existing = await this.service.getAnnouncementById(deleteArgs);
+
     if (!existing) {
+      logger.warn(
+        { announcementId: req.params.id },
+        "Announcement to delete was not found."
+      );
+
       return responseError(["Chamado não encontrado"], 404);
     }
 
-    await this.service.deleteAnnouncement(id);
+    await this.service.deleteAnnouncement(deleteArgs);
 
     return responseNoContent();
   }

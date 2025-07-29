@@ -1,15 +1,20 @@
 import { AppError } from "@src/shared/errors";
 import { AnnouncementMapper } from "./annoucements.mapper";
-import { IAnnouncementsService } from "./announcements.interfaces";
+import {
+  CreateServiceArgs,
+  DeleteServiceArgs,
+  GetByIdRepoArgs,
+  IAnnouncementsService,
+  ListServiceArgs,
+  UpdateServiceArgs,
+} from "./announcements.interfaces";
 import { IAnnouncementsRepository } from "./announcements.interfaces";
-import { Announcement, NewAnnouncement } from "./announcements.schema";
-import { ListAnnouncementsQuery } from "./dtos/list-announcements-query.dto";
-import { UpdateAnnouncement } from "./dtos/update-annoucement.dto";
+import { Announcement } from "./announcements.schema";
 
 export class AnnouncementsService implements IAnnouncementsService {
   constructor(private repository: IAnnouncementsRepository) {}
 
-  async listAnnouncements(query: ListAnnouncementsQuery) {
+  async listAnnouncements({ query, context }: ListServiceArgs) {
     const status = query.status
       ? AnnouncementMapper.mapStatusClientToDb(query.status)
       : undefined;
@@ -29,11 +34,13 @@ export class AnnouncementsService implements IAnnouncementsService {
       data_final: deletedAt,
     };
 
-    return await this.repository.getAll(filters);
+    return await this.repository.getAll({ query: filters, context });
   }
 
-  async getAnnouncementById(id: string): Promise<Announcement | null> {
-    const annoucement = await this.repository.getById(id);
+  async getAnnouncementById(
+    args: GetByIdRepoArgs
+  ): Promise<Announcement | null> {
+    const annoucement = await this.repository.getById(args);
 
     if (!annoucement || annoucement.deletedAt) {
       throw new AppError("Chamado não encontrado", 404);
@@ -42,27 +49,31 @@ export class AnnouncementsService implements IAnnouncementsService {
     return annoucement;
   }
 
-  async createAnnouncement(data: NewAnnouncement): Promise<Announcement> {
-    return await this.repository.create(data);
+  async createAnnouncement(args: CreateServiceArgs): Promise<Announcement> {
+    return await this.repository.create(args);
   }
 
   async updateAnnouncement(
-    id: string,
-    data: UpdateAnnouncement
+    args: UpdateServiceArgs
   ): Promise<Announcement | null> {
-    const existing = await this.repository.getById(id);
+    const existing = await this.repository.getById(args);
 
     if (!existing || existing.deletedAt) {
       throw new AppError("Chamado não encontrado", 404);
     }
 
+    const { data, ...rest } = args;
+
     const mappedAnnouncement = AnnouncementMapper.toPartialDomain(data);
 
-    return await this.repository.update(id, mappedAnnouncement);
+    return await this.repository.update({
+      ...rest,
+      data: mappedAnnouncement,
+    });
   }
 
-  async deleteAnnouncement(id: string): Promise<void> {
-    const annoucement = await this.repository.getById(id);
+  async deleteAnnouncement(args: DeleteServiceArgs): Promise<void> {
+    const annoucement = await this.repository.getById(args);
     if (!annoucement) {
       throw new AppError("Chamado não encontrado", 404);
     }
@@ -71,6 +82,6 @@ export class AnnouncementsService implements IAnnouncementsService {
       throw new AppError("Chamado já deletado");
     }
 
-    await this.repository.softDelete(id);
+    await this.repository.softDelete(args);
   }
 }

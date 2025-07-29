@@ -5,7 +5,10 @@ import {
   ListAnnouncementsQuery,
   listAnnouncementsQueryDto,
 } from "./dtos/list-announcements-query.dto";
-import { updateAnnouncementDto } from "./dtos/update-annoucement.dto";
+import {
+  UpdateAnnouncement,
+  updateAnnouncementDto,
+} from "./dtos/update-annoucement.dto";
 import { createAnnouncementDto } from "./dtos/create-annoucement.dto";
 import { validateBody } from "@middlewares/body-validator.middleware";
 import { validateQuery } from "@middlewares/query-validator.middleware";
@@ -46,14 +49,21 @@ export async function announcementsRoutes(app: FastifyInstance) {
     "/:id",
     { preHandler: [validateIdParam(), validateBody(updateAnnouncementDto)] },
     async (req, reply) => {
-      const { body, statusCode } = await controller.update(req);
+      const { body, statusCode } = await controller.update(
+        req as FastifyRequest<{
+          Params: { id: string };
+          Body: UpdateAnnouncement;
+        }>
+      );
 
       return reply.status(statusCode).send(body);
     }
   );
 
   app.delete("/:id", { preHandler: validateIdParam() }, async (req, reply) => {
-    const { body, statusCode } = await controller.softDelete(req);
+    const { body, statusCode } = await controller.softDelete(
+      req as FastifyRequest<{ Params: { id: string } }>
+    );
 
     return reply.status(statusCode).send(body);
   });
