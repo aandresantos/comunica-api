@@ -9,7 +9,10 @@ import {
   UpdateAnnouncement,
   updateAnnouncementDto,
 } from "./dtos/update-annoucement.dto";
-import { createAnnouncementDto } from "./dtos/create-annoucement.dto";
+import {
+  CreateAnnouncement,
+  createAnnouncementDto,
+} from "./dtos/create-annoucement.dto";
 import { validateBody } from "@middlewares/body-validator.middleware";
 import { validateQuery } from "@middlewares/query-validator.middleware";
 import { validateIdParam } from "@middlewares/param-validator.middleware";
@@ -30,7 +33,9 @@ export async function announcementsRoutes(app: FastifyInstance) {
   );
 
   app.get("/:id", { preHandler: validateIdParam() }, async (req, reply) => {
-    const { body, statusCode } = await controller.getById(req);
+    const { body, statusCode } = await controller.getById(
+      req as FastifyRequest<{ Params: { id: string } }>
+    );
 
     return reply.status(statusCode).send(body);
   });
@@ -39,7 +44,9 @@ export async function announcementsRoutes(app: FastifyInstance) {
     "/",
     { preHandler: validateBody(createAnnouncementDto) },
     async (req, reply) => {
-      const { body, statusCode } = await controller.create(req);
+      const { body, statusCode } = await controller.create(
+        req as FastifyRequest<{ Body: CreateAnnouncement }>
+      );
 
       return reply.status(statusCode).send(body);
     }
