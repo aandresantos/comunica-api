@@ -1,4 +1,4 @@
-import { FastifyReply, FastifyRequest } from "fastify";
+import { FastifyRequest } from "fastify";
 
 import { IAnnouncementsService } from "./announcements.interfaces";
 import { CreateAnnouncement } from "./dtos/create-annoucement.dto";
