@@ -1,42 +1,45 @@
 import { ZodError } from "zod";
 import { FastifyError, FastifyReply, FastifyRequest } from "fastify";
 import { AppError } from "../errors";
-import { BaseResponse, StatusResponse } from "../types/base-response.types";
+
+import { responseError } from "../helpers/response.helpers";
+import { BaseResponse } from "../types/base-response.types";
 
 export function errorHandler(
   error: FastifyError,
-  request: FastifyRequest,
+  _: FastifyRequest,
   reply: FastifyReply
 ) {
   if (error instanceof AppError) {
-    return reply.status(error.statusCode).send({
-      success: false,
-      errors: [error.message],
-      status: StatusResponse.ERROR,
-    } satisfies BaseResponse<void>);
+    const { body, statusCode } = responseError(
+      [error.message],
+      error.statusCode
+    );
+
+    return reply.status(statusCode).send(body);
   }
 
   if (error instanceof ZodError) {
-    return reply.status(400).send({
-      success: false,
-      errors: (error as any).errors.map(
-        (e: ZodError["issues"][0]) => `${e.path.join(".")}: ${e.message}`
-      ),
-      status: StatusResponse.ERROR,
-    } satisfies BaseResponse<void>);
+    const errors = error.issues.map((e) => `${e.path.join(".")}: ${e.message}`);
+
+    const { body, statusCode } = responseError(errors, error.statusCode);
+
+    return reply.status(statusCode).send(body);
   }
 
-  if (error.validation) {
-    return reply.status(400).send({
-      success: false,
-      errors: [error.message],
-      status: StatusResponse.ERROR,
-    } satisfies BaseResponse<void>);
+  if (error?.validation) {
+    const { body, statusCode } = responseError(
+      [error.message],
+      error.statusCode
+    );
+
+    return reply.status(statusCode).send(body);
   }
 
-  return reply.status(500).send({
-    success: false,
-    errors: ["Erro inesperado no servidor"],
-    status: StatusResponse.ERROR,
-  } satisfies BaseResponse<void>);
+  const { body, statusCode } = responseError(
+    ["Erro inesperado no servidor"],
+    500
+  );
+
+  return reply.status(statusCode).send(body);
 }

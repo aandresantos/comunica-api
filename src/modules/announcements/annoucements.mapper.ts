@@ -4,11 +4,12 @@ import {
   StatusAnnouncement,
   StatusAnnouncementType,
 } from "./types/announcements.types";
-import { CreateAnnouncement } from "./dtos/create-annoucement.dto";
 import {
   StatusAnnouncementClient,
   StatusAnnouncementClientType,
 } from "./types/client-announcements.types";
+import { CreateAnnouncement } from "./dtos/create-annoucement.dto";
+import { UpdateAnnouncement } from "./dtos/update-annoucement.dto";
 
 export interface AnnouncementViewModel {
   id: string;
@@ -27,8 +28,8 @@ export class AnnouncementMapper {
     status: StatusAnnouncementClientType
   ): StatusAnnouncementType {
     const map: Record<StatusAnnouncementClientType, StatusAnnouncementType> = {
-      [StatusAnnouncementClient.SENT]: StatusAnnouncement.SENT,
-      [StatusAnnouncementClient.DRAFT]: StatusAnnouncement.DRAFT,
+      [StatusAnnouncementClient["ENVIADO"]]: StatusAnnouncement.SENT,
+      [StatusAnnouncementClient["RASCUNHO"]]: StatusAnnouncement.DRAFT,
     };
     return map[status];
   }
@@ -37,8 +38,8 @@ export class AnnouncementMapper {
     status: StatusAnnouncementType
   ): StatusAnnouncementClientType {
     const map: Record<StatusAnnouncementType, StatusAnnouncementClientType> = {
-      [StatusAnnouncement.SENT]: StatusAnnouncementClient.SENT,
-      [StatusAnnouncement.DRAFT]: StatusAnnouncementClient.DRAFT,
+      [StatusAnnouncement.SENT]: StatusAnnouncementClient["ENVIADO"],
+      [StatusAnnouncement.DRAFT]: StatusAnnouncementClient["RASCUNHO"],
     };
     return map[status];
   }
@@ -75,5 +76,21 @@ export class AnnouncementMapper {
       status: StatusAnnouncement.DRAFT,
       author: dto.autor,
     };
+  }
+
+  public static toPartialDomain(
+    dto: UpdateAnnouncement
+  ): Partial<NewAnnouncement> {
+    const mapped: Partial<NewAnnouncement> = {};
+
+    if (dto.titulo !== undefined) mapped.title = dto.titulo;
+    if (dto.conteudo !== undefined) mapped.content = dto.conteudo;
+    if (dto.tipo_canal !== undefined) mapped.channelType = dto.tipo_canal;
+    if (dto.status !== undefined)
+      mapped.status = this.mapStatusClientToDb(dto.status);
+    if (dto.autor !== undefined) mapped.author = dto.autor;
+    if (dto.data_envio !== undefined) mapped.sentAt = dto.data_envio;
+
+    return mapped;
   }
 }

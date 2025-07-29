@@ -1,14 +1,15 @@
 import { FastifyInstance, FastifyRequest } from "fastify";
 
-import { validateBody } from "@middlewares/body-validator.middleware";
 import { buildAnnouncementsModule } from "./announcements.module";
-import { createAnnouncementDto } from "./dtos/create-annoucement.dto";
 import {
   ListAnnouncementsQuery,
   listAnnouncementsQueryDto,
 } from "./dtos/list-announcements-query.dto";
-import { ZodError } from "zod";
+import { updateAnnouncementDto } from "./dtos/update-annoucement.dto";
+import { createAnnouncementDto } from "./dtos/create-annoucement.dto";
+import { validateBody } from "@middlewares/body-validator.middleware";
 import { validateQuery } from "@middlewares/query-validator.middleware";
+import { validateIdParam } from "@middlewares/param-validator.middleware";
 
 export async function announcementsRoutes(app: FastifyInstance) {
   const controller = buildAnnouncementsModule();
@@ -16,22 +17,44 @@ export async function announcementsRoutes(app: FastifyInstance) {
   app.get(
     "/",
     { preHandler: validateQuery(listAnnouncementsQueryDto) },
-    (req, reply) =>
-      controller.getAll(
-        req as FastifyRequest<{ Querystring: ListAnnouncementsQuery }>,
-        reply
-      )
+    async (req, reply) => {
+      const { body, statusCode } = await controller.getAll(
+        req as FastifyRequest<{ Querystring: ListAnnouncementsQuery }>
+      );
+
+      return reply.status(statusCode).send(body);
+    }
   );
 
-  app.get("/:id", (req, reply) => controller.getById(req, reply));
+  app.get("/:id", { preHandler: validateIdParam() }, async (req, reply) => {
+    const { body, statusCode } = await controller.getById(req);
+
+    return reply.status(statusCode).send(body);
+  });
 
   app.post(
     "/",
     { preHandler: validateBody(createAnnouncementDto) },
-    (req, reply) => controller.create(req, reply)
+    async (req, reply) => {
+      const { body, statusCode } = await controller.create(req);
+
+      return reply.status(statusCode).send(body);
+    }
   );
 
-  app.put("/:id", (req, reply) => controller.update(req, reply));
+  app.put(
+    "/:id",
+    { preHandler: [validateIdParam(), validateBody(updateAnnouncementDto)] },
+    async (req, reply) => {
+      const { body, statusCode } = await controller.update(req);
 
-  app.delete("/:id", (req, reply) => controller.softDelete(req, reply));
+      return reply.status(statusCode).send(body);
+    }
+  );
+
+  app.delete("/:id", { preHandler: validateIdParam() }, async (req, reply) => {
+    const { body, statusCode } = await controller.softDelete(req);
+
+    return reply.status(statusCode).send(body);
+  });
 }

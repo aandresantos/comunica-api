@@ -9,17 +9,18 @@ export enum StatusResponse {
 export type SuccessResponse<T> = {
   data: T;
   success: true;
-  status: StatusResponse.SUCCESS;
+  errors: null;
 };
 
 export type ErrorResponse = {
   success: false;
+  data: null;
   errors: string[];
-  status:
-    | StatusResponse.ERROR
-    | StatusResponse.UNAUTHORIZED
-    | StatusResponse.EXCEPTION
-    | StatusResponse.BAD_REQUEST;
 };
 
 export type BaseResponse<T> = SuccessResponse<T> | ErrorResponse;
+
+export type ControllerResponse<T> = {
+  statusCode: number;
+  body: BaseResponse<T>;
+};

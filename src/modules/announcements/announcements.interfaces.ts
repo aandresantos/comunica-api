@@ -1,5 +1,6 @@
 import { Announcement, NewAnnouncement } from "./announcements.schema";
 import { ListAnnouncementsQuery } from "./dtos/list-announcements-query.dto";
+import { UpdateAnnouncement } from "./dtos/update-annoucement.dto";
 import { AnnouncementRepositoryFilters } from "./types/client-announcements.types";
 
 export interface IAnnouncementsRepository {
@@ -23,7 +24,7 @@ export interface IAnnouncementsService {
   createAnnouncement: (data: NewAnnouncement) => Promise<Announcement>;
   updateAnnouncement: (
     id: string,
-    data: Partial<NewAnnouncement>
+    data: UpdateAnnouncement
   ) => Promise<Announcement | null>;
   deleteAnnouncement: (id: string) => Promise<void>;
 }

@@ -1,9 +1,10 @@
+import { AppError } from "@src/shared/errors";
 import { AnnouncementMapper } from "./annoucements.mapper";
 import { IAnnouncementsService } from "./announcements.interfaces";
 import { IAnnouncementsRepository } from "./announcements.interfaces";
 import { Announcement, NewAnnouncement } from "./announcements.schema";
 import { ListAnnouncementsQuery } from "./dtos/list-announcements-query.dto";
-import { AnnouncementRepositoryFilters } from "./types/client-announcements.types";
+import { UpdateAnnouncement } from "./dtos/update-annoucement.dto";
 
 export class AnnouncementsService implements IAnnouncementsService {
   constructor(private repository: IAnnouncementsRepository) {}
@@ -32,7 +33,13 @@ export class AnnouncementsService implements IAnnouncementsService {
   }
 
   async getAnnouncementById(id: string): Promise<Announcement | null> {
-    return await this.repository.getById(id);
+    const annoucement = await this.repository.getById(id);
+
+    if (!annoucement || annoucement.deletedAt) {
+      throw new AppError("Chamado não encontrado", 404);
+    }
+
+    return annoucement;
   }
 
   async createAnnouncement(data: NewAnnouncement): Promise<Announcement> {
@@ -41,24 +48,27 @@ export class AnnouncementsService implements IAnnouncementsService {
 
   async updateAnnouncement(
     id: string,
-    data: Partial<NewAnnouncement>
+    data: UpdateAnnouncement
   ): Promise<Announcement | null> {
     const existing = await this.repository.getById(id);
-    if (!existing) {
-      return null;
+
+    if (!existing || existing.deletedAt) {
+      throw new AppError("Chamado não encontrado", 404);
     }
 
-    return await this.repository.update(id, data);
+    const mappedAnnouncement = AnnouncementMapper.toPartialDomain(data);
+
+    return await this.repository.update(id, mappedAnnouncement);
   }
 
   async deleteAnnouncement(id: string): Promise<void> {
     const annoucement = await this.repository.getById(id);
     if (!annoucement) {
-      throw new Error("Chamado não encontrado");
+      throw new AppError("Chamado não encontrado", 404);
     }
 
     if (annoucement.deletedAt) {
-      throw new Error("Chamado já deletado");
+      throw new AppError("Chamado já deletado");
     }
 
     await this.repository.softDelete(id);

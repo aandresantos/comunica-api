@@ -4,9 +4,13 @@ import fastifySwaggerUi from "@fastify/swagger-ui";
 
 import { config } from "@configs/app.config";
 import { announcementsRoutes } from "@src/modules/announcements/announcements.routes";
+import { errorHandler } from "./shared/handlers/error.handler";
+import { ControllerResponse } from "./shared/types/base-response.types";
 
 export const buildApp = () => {
   const app = fastify({ logger: true });
+
+  app.setErrorHandler(errorHandler);
 
   app.register(fastifySwagger, {
     swagger: {

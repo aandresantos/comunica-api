@@ -1,8 +1,8 @@
 import { ChannelType, StatusAnnouncementType } from "./announcements.types";
 
 export const StatusAnnouncementClient = {
-  SENT: "enviado",
-  DRAFT: "rascunho",
+  ENVIADO: "enviado",
+  RASCUNHO: "rascunho",
 } as const;
 
 export type StatusAnnouncementClientType =
@@ -14,6 +14,6 @@ export interface AnnouncementRepositoryFilters {
   autor?: string;
   data_inicial?: string;
   data_final?: string;
-  limit?: string;
-  offset?: string;
+  limit?: number;
+  offset?: number;
 }

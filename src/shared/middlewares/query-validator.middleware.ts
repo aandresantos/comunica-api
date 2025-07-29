@@ -1,13 +1,14 @@
-import { z } from "zod";
+import { z as zod, ZodError } from "zod";
 
-export function validateQuery(schema: z.ZodSchema) {
-  return (req: any, _reply: any, done: any) => {
+export function validateQuery(schema: zod.ZodSchema) {
+  return (req: any, _: any, done: any) => {
     const result = schema.safeParse(req.query);
     if (!result.success) {
-      done(new Error("Query inválida"));
-    } else {
-      req.query = result.data;
-      done();
+      done(new ZodError(result.error.issues));
     }
+
+    req.query = result.data;
+
+    done();
   };
 }
