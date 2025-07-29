@@ -36,12 +36,22 @@ export class AnnouncementsController {
       component: "AnnouncementsController",
     });
 
+    logger.info(
+      { query: req.query },
+      "Request received to list announcements."
+    );
+
     const listArgs: ListServiceArgs = {
       query: req.query,
       context: { logger: req.log },
     };
 
     const paginated = await this.service.listAnnouncements(listArgs);
+
+    logger.info(
+      { foundCount: paginated.total },
+      "Successfully processed list request."
+    );
 
     return responseSuccess({
       total: paginated.total,
@@ -50,14 +60,19 @@ export class AnnouncementsController {
   }
 
   async getById(
-    req: FastifyRequest
+    req: FastifyRequest<{ Params: { id: string } }>
   ): Promise<ControllerResponse<AnnouncementViewModel | null>> {
     const logger = req.log.child({
       operation: "getById",
       component: "AnnouncementsController",
     });
 
-    const { id } = req.params as { id: string };
+    logger.info(
+      { announcementId: req.params.id },
+      "Request received to get announcement by ID."
+    );
+
+    const { id } = req.params;
 
     const getByIdArgs: GetByIdServiceArgs = {
       id,
@@ -72,18 +87,25 @@ export class AnnouncementsController {
       return responseError(["Chamado não encontrado"], 404);
     }
 
+    logger.info({ announcementId: id }, "Successfully retrieved announcement.");
+
     return responseSuccess(AnnouncementMapper.toViewModel(announcement));
   }
 
   async create(
-    req: FastifyRequest
+    req: FastifyRequest<{ Body: CreateAnnouncement }>
   ): Promise<ControllerResponse<AnnouncementViewModel>> {
     const logger = req.log.child({
       operation: "create",
       component: "AnnouncementsController",
     });
 
-    const body = req.body as CreateAnnouncement;
+    const { body } = req;
+
+    logger.info(
+      { author: body.autor },
+      "Request received to create announcement."
+    );
 
     const createArgs: CreateServiceArgs = {
       data: AnnouncementMapper.toDomain(body),
@@ -91,6 +113,11 @@ export class AnnouncementsController {
     };
 
     const created = await this.service.createAnnouncement(createArgs);
+
+    logger.info(
+      { announcementId: created.id },
+      "Successfully created announcement."
+    );
 
     return responseCreated(AnnouncementMapper.toViewModel(created));
   }
@@ -102,6 +129,11 @@ export class AnnouncementsController {
       operation: "update",
       component: "AnnouncementsController",
     });
+
+    logger.info(
+      { announcementId: req.params.id },
+      "Request received to update announcement."
+    );
 
     const updateArgs: UpdateServiceArgs = {
       id: req.params.id,
@@ -120,6 +152,11 @@ export class AnnouncementsController {
       return responseError(["Chamado não encontrado"], 404);
     }
 
+    logger.info(
+      { announcementId: updated.id },
+      "Successfully updated announcement."
+    );
+
     return responseSuccess(AnnouncementMapper.toViewModel(updated));
   }
 
@@ -131,23 +168,22 @@ export class AnnouncementsController {
       component: "AnnouncementsController",
     });
 
+    logger.info(
+      { announcementId: req.params.id },
+      "Request received to soft delete announcement."
+    );
+
     const deleteArgs: DeleteServiceArgs = {
       id: req.params.id,
       context: { logger: req.log },
     };
 
-    const existing = await this.service.getAnnouncementById(deleteArgs);
-
-    if (!existing) {
-      logger.warn(
-        { announcementId: req.params.id },
-        "Announcement to delete was not found."
-      );
-
-      return responseError(["Chamado não encontrado"], 404);
-    }
-
     await this.service.deleteAnnouncement(deleteArgs);
+
+    logger.info(
+      { announcementId: req.params.id },
+      "Successfully processed soft delete request."
+    );
 
     return responseNoContent();
   }

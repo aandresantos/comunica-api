@@ -15,73 +15,165 @@ export class AnnouncementsService implements IAnnouncementsService {
   constructor(private repository: IAnnouncementsRepository) {}
 
   async listAnnouncements({ query, context }: ListServiceArgs) {
-    const status = query.status
-      ? AnnouncementMapper.mapStatusClientToDb(query.status)
-      : undefined;
+    const logger = context.logger.child({
+      component: "AnnouncementsService",
+      operation: "listAnnouncements",
+    });
 
-    const createdAt = query.data_inicial
-      ? query.data_inicial.toISOString()
-      : undefined;
+    try {
+      const status = query.status
+        ? AnnouncementMapper.mapStatusClientToDb(query.status)
+        : undefined;
 
-    const deletedAt = query.data_final
-      ? query.data_final.toISOString()
-      : undefined;
+      const createdAt = query.data_inicial
+        ? query.data_inicial.toISOString()
+        : undefined;
 
-    const filters = {
-      ...query,
-      status: status,
-      data_inicial: createdAt,
-      data_final: deletedAt,
-    };
+      const deletedAt = query.data_final
+        ? query.data_final.toISOString()
+        : undefined;
 
-    return await this.repository.getAll({ query: filters, context });
+      const filters = {
+        ...query,
+        status: status,
+        data_inicial: createdAt,
+        data_final: deletedAt,
+      };
+
+      return await this.repository.getAll({ query: filters, context });
+    } catch (err) {
+      logger.error(
+        { err, query },
+        "An error occurred while listing announcements."
+      );
+
+      throw err;
+    }
   }
 
   async getAnnouncementById(
     args: GetByIdRepoArgs
   ): Promise<Announcement | null> {
-    const annoucement = await this.repository.getById(args);
+    const { id, context } = args;
+    const logger = context.logger.child({
+      component: "AnnouncementsService",
+      operation: "getAnnouncementById",
+    });
 
-    if (!annoucement || annoucement.deletedAt) {
-      throw new AppError("Chamado não encontrado", 404);
+    try {
+      const announcement = await this.repository.getById(args);
+
+      if (!announcement || announcement.deletedAt) {
+        logger.warn(
+          { announcementId: id, found: false },
+          "Announcement not found or already deleted."
+        );
+
+        throw new AppError("Chamado não encontrado", 404);
+      }
+
+      return announcement;
+    } catch (err) {
+      if (!(err instanceof AppError)) {
+        logger.error(
+          { err, announcementId: id },
+          "An unexpected error occurred while getting announcement."
+        );
+      }
+
+      throw err;
     }
-
-    return annoucement;
   }
 
   async createAnnouncement(args: CreateServiceArgs): Promise<Announcement> {
-    return await this.repository.create(args);
+    const { data, context } = args;
+    const logger = context.logger.child({
+      component: "AnnouncementsService",
+      operation: "createAnnouncement",
+    });
+
+    try {
+      return await this.repository.create({ data, context });
+    } catch (err) {
+      logger.error(
+        { err },
+        "An error occurred while creating an announcement."
+      );
+
+      throw err;
+    }
   }
 
   async updateAnnouncement(
     args: UpdateServiceArgs
   ): Promise<Announcement | null> {
-    const existing = await this.repository.getById(args);
-
-    if (!existing || existing.deletedAt) {
-      throw new AppError("Chamado não encontrado", 404);
-    }
-
-    const { data, ...rest } = args;
-
-    const mappedAnnouncement = AnnouncementMapper.toPartialDomain(data);
-
-    return await this.repository.update({
-      ...rest,
-      data: mappedAnnouncement,
+    const logger = args.context.logger.child({
+      component: "AnnouncementsService",
+      operation: "updateAnnouncement",
     });
+
+    try {
+      const existing = await this.repository.getById(args);
+
+      if (!existing || existing.deletedAt) {
+        logger.warn(
+          { announcementId: args.id },
+          "Attempted to update an announcement that was not found."
+        );
+
+        throw new AppError("Chamado não encontrado", 404);
+      }
+
+      const { data, ...rest } = args;
+
+      const mappedAnnouncement = AnnouncementMapper.toPartialDomain(data);
+
+      return await this.repository.update({
+        ...rest,
+        data: mappedAnnouncement,
+      });
+    } catch (err) {
+      if (!(err instanceof AppError)) {
+        logger.error(
+          { err, announcementId: args.id },
+          "An unexpected error occurred while updating announcement."
+        );
+      }
+
+      throw err;
+    }
   }
 
   async deleteAnnouncement(args: DeleteServiceArgs): Promise<void> {
-    const annoucement = await this.repository.getById(args);
-    if (!annoucement) {
-      throw new AppError("Chamado não encontrado", 404);
-    }
+    const { id, context } = args;
+    const logger = context.logger.child({
+      component: "AnnouncementsService",
+      operation: "deleteAnnouncement",
+    });
 
-    if (annoucement.deletedAt) {
-      throw new AppError("Chamado já deletado");
-    }
+    try {
+      const annoucement = await this.repository.getById(args);
 
-    await this.repository.softDelete(args);
+      if (!annoucement || annoucement.deletedAt) {
+        throw new AppError("Chamado não encontrado", 404);
+      }
+
+      const wasDeleted = await this.repository.softDelete(args);
+
+      if (!wasDeleted) {
+        throw new AppError("Não foi possível deletar o Chamado");
+      }
+
+      return;
+    } catch (err) {
+      if (!(err instanceof AppError)) {
+        logger.error(
+          { err, announcementId: id },
+          "An unexpected error occurred while deleting announcement."
+        );
+      }
+
+      throw err;
+    }
   }
 }

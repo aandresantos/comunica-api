@@ -13,7 +13,7 @@ export interface IAnnouncementsRepository {
   getById: (args: GetByIdRepoArgs) => Promise<Announcement | null>;
   create: (args: CreateRepoArgs) => Promise<Announcement>;
   update: (args: UpdateRepoArgs) => Promise<Announcement | null>;
-  softDelete: (args: DeleteRepoArgs) => Promise<void>;
+  softDelete: (args: DeleteRepoArgs) => Promise<Boolean>;
 }
 
 export interface IAnnouncementsService {
