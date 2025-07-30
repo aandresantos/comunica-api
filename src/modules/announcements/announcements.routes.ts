@@ -16,6 +16,7 @@ import {
 import { validateIdParam } from "@middlewares/param-validator.middleware";
 import { AnnouncementViewModel } from "./annoucements.mapper";
 import { ControllerResponse } from "@src/shared/types/base-response.types";
+import z from "zod";
 
 export async function announcementsRoutes(app: FastifyInstance) {
   const controller = buildAnnouncementsModule();
@@ -55,8 +56,12 @@ export async function announcementsRoutes(app: FastifyInstance) {
   app.put(
     "/:id",
     {
-      preHandler: validateIdParam(),
-      schema: { body: updateAnnouncementDto },
+      schema: {
+        body: updateAnnouncementDto,
+        params: z.object({
+          id: z.uuid({ message: "O ID do parâmetro deve ser um UUID válido." }),
+        }),
+      },
     },
     async (req, reply) => {
       const { body, statusCode } = await controller.update(
