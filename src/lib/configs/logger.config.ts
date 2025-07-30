@@ -10,7 +10,7 @@ export const loggerOpts: LoggerOptions = {
     }),
   },
   base: { service: "comunica-api" },
-  redact: ["password", "pwd"],
+  redact: ["secret", "token", "apiKey"],
   transport:
     process.env.NODE_ENV !== "production"
       ? {
@@ -23,3 +23,18 @@ export const loggerOpts: LoggerOptions = {
         }
       : undefined,
 };
+
+export const logger = pino({
+  ...loggerOpts,
+  transport:
+    process.env.NODE_ENV !== "production"
+      ? {
+          target: "pino-pretty",
+          options: {
+            colorize: true,
+            translateTime: "SYS:standard",
+            ignore: "pid,hostname",
+          },
+        }
+      : undefined,
+});

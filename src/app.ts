@@ -7,6 +7,7 @@ import { announcementsRoutes } from "@src/modules/announcements/announcements.ro
 import { errorHandler } from "@shared/handlers/error.handler";
 import { swaggerConfig } from "@configs/swagger.config";
 import { loggerOpts } from "@configs/logger.config";
+import { integrationsRoutes } from "./modules/integrations/integrations.routes";
 
 export const buildApp = () => {
   const app = fastify({
@@ -19,6 +20,7 @@ export const buildApp = () => {
 
   app.register(fastifySwaggerUi, { routePrefix: "/docs" });
   app.register(announcementsRoutes, { prefix: "/chamados" });
+  app.register(integrationsRoutes, { prefix: "/integracao/dados" });
 
   return app;
 };
