@@ -87,7 +87,14 @@ export class AnnouncementsRepository implements IAnnouncementsRepository {
       const found = await this.database
         .select()
         .from(announcementsTable)
-        .where(eq(announcementsTable.id, id));
+        .where(
+          and(
+            ...[
+              eq(announcementsTable.id, id),
+              isNull(announcementsTable.deletedAt),
+            ]
+          )
+        );
 
       const result = found?.[0] || null;
 
@@ -161,7 +168,14 @@ export class AnnouncementsRepository implements IAnnouncementsRepository {
       const updated = await this.database
         .update(announcementsTable)
         .set(data)
-        .where(eq(announcementsTable.id, id))
+        .where(
+          and(
+            ...[
+              eq(announcementsTable.id, id),
+              isNull(announcementsTable.deletedAt),
+            ]
+          )
+        )
         .returning();
 
       const result = updated[0] || null;

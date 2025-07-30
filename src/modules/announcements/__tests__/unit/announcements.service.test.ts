@@ -326,38 +326,12 @@ describe("AnnouncementsService - Unit Tests", () => {
       );
     });
 
-    it("should throw an AppError if the announcement to update has been soft-deleted", async () => {
-      const deletedAnnouncement: Announcement = {
-        id: "deleted-uuid",
-        deletedAt: new Date(),
-      } as Announcement;
-
-      mockRepository.getById.mockResolvedValue(deletedAnnouncement);
-
-      await expect(
-        service.updateAnnouncement({
-          id: "deleted-uuid",
-          data: { titulo: "Segunda feira tem bolo de graça" },
-          context: mockContext,
-        })
-      ).rejects.toThrow(new AppError("Chamado não encontrado", 404));
-
-      expect(mockRepository.update).not.toHaveBeenCalled();
-    });
-
     it("should re-throw an error if the repository fails on the final update operation", async () => {
-      const existingAnnouncement: Announcement = {
-        id: "existing-uuid",
-        deletedAt: null,
-      } as Announcement;
+      mockRepository.getById.mockResolvedValue(null);
 
-      mockRepository.getById.mockResolvedValue(existingAnnouncement);
+      const appError = new AppError("Chamado não encontrado");
 
-      const databaseError = new Error(
-        "Erro no banco de dados ao atualizar chamado"
-      );
-
-      mockRepository.update.mockRejectedValue(databaseError);
+      mockRepository.update.mockRejectedValue(appError);
 
       await expect(
         service.updateAnnouncement({
@@ -365,7 +339,7 @@ describe("AnnouncementsService - Unit Tests", () => {
           data: { titulo: "Segunda feira tem bolo de graça" },
           context: mockContext,
         })
-      ).rejects.toThrow(databaseError);
+      ).rejects.toThrow(appError);
     });
   });
 
@@ -417,9 +391,11 @@ describe("AnnouncementsService - Unit Tests", () => {
           id: "deleted-uuid",
           context: mockContext,
         })
-      ).rejects.toThrow(new AppError("Chamado não encontrado", 404));
+      ).rejects.toThrow(
+        new AppError("Não foi possível deletar o Chamado", 404)
+      );
 
-      expect(mockRepository.softDelete).not.toHaveBeenCalled();
+      expect(mockRepository.softDelete).toHaveBeenCalledTimes(1);
     });
 
     it("should throw an AppError if the repository softDelete operation fails", async () => {

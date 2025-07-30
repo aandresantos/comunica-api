@@ -6,7 +6,8 @@ import {
 } from "../../announcements.schema";
 import pino from "pino";
 import { ContextualArgs } from "../../announcements.interfaces";
-import { sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
+import { randomUUID } from "crypto";
 
 describe("AnnouncementsRepository - Integration Tests", () => {
   let repository: AnnouncementsRepository;
@@ -19,7 +20,7 @@ describe("AnnouncementsRepository - Integration Tests", () => {
       author: "ana",
       channelType: "email",
       status: "draft",
-      content: "announcement",
+      content: "announcement 1",
     },
     {
       title: "Chamado 2",
@@ -127,6 +128,221 @@ describe("AnnouncementsRepository - Integration Tests", () => {
 
       expect(result.total).toBe(0);
       expect(result.data.length).toBe(0);
+    });
+  });
+
+  describe("getById", () => {
+    it("should return a single announcement when a valid and existing ID is provided", async () => {
+      const [newAnnouncement] = await database
+        .insert(announcementsTable)
+        .values({
+          title: "Novo chamado",
+          author: "Diretoria",
+          content: "content",
+          channelType: "email",
+          status: "draft",
+        })
+        .returning();
+
+      const targetId = newAnnouncement.id;
+
+      const result = await repository.getById({
+        id: targetId,
+        context: mockContext,
+      });
+
+      expect(result).not.toBeNull();
+
+      expect(result?.id).toBe(targetId);
+      expect(result?.title).toBe("Novo chamado");
+    });
+
+    it("should return null when the provided ID does not exist", async () => {
+      const nonExistentId = randomUUID();
+
+      const result = await repository.getById({
+        id: nonExistentId,
+        context: mockContext,
+      });
+
+      expect(result).toBeNull();
+    });
+
+    it("should return null for an announcement that has been soft-deleted", async () => {
+      const [foundDeleted] = await database
+        .select({ id: announcementsTable.id })
+        .from(announcementsTable)
+        .where(eq(announcementsTable.title, "Chamado 5"));
+
+      const result = await repository.getById({
+        id: foundDeleted.id,
+        context: mockContext,
+      });
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe("update", () => {
+    it("should correctly update the specified fields of an existing announcement", async () => {
+      const [originalAnnouncement] = await database
+        .insert(announcementsTable)
+        .values({
+          title: "Novo chamado",
+          content: "conteúdo original",
+          author: "Diretoria",
+          channelType: "email",
+          status: "draft",
+        })
+        .returning();
+
+      const newValues = {
+        status: "sent" as const,
+      };
+
+      const updatedAnnouncement = await repository.update({
+        id: originalAnnouncement.id,
+        data: newValues,
+        context: mockContext,
+      });
+
+      expect(updatedAnnouncement).not.toBeNull();
+      expect(updatedAnnouncement?.id).toBe(originalAnnouncement.id);
+      expect(updatedAnnouncement?.status).toBe("sent");
+
+      const foundAfterUpdate = await database
+        .select()
+        .from(announcementsTable)
+        .where(eq(announcementsTable.id, originalAnnouncement.id));
+
+      expect(foundAfterUpdate[0].status).toBe("sent");
+    });
+
+    it("should return null when trying to update a non-existent announcement", async () => {
+      const nonExistentId = randomUUID();
+      const updateData = { title: "Nem existe" };
+
+      const result = await repository.update({
+        id: nonExistentId,
+        data: updateData,
+        context: mockContext,
+      });
+
+      expect(result).toBeNull();
+    });
+
+    it("should not update a soft-deleted announcement", async () => {
+      const [announcement] = await database
+        .insert(announcementsTable)
+        .values({
+          title: "Chamado que vai ser deletado",
+          content: "vai ser apagado!",
+          author: "Diretoria",
+          channelType: "email",
+          status: "draft",
+        })
+        .returning();
+
+      await database
+        .update(announcementsTable)
+        .set({
+          deletedAt: new Date(),
+          title: "Chamado apagado",
+          content: "apagado",
+        })
+        .where(eq(announcementsTable.id, announcement.id));
+
+      const updateData = { title: "Mudei de ideia!" };
+
+      const result = await repository.update({
+        id: announcement.id,
+        data: updateData,
+        context: mockContext,
+      });
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe("create", () => {
+    it("should insert a new announcement into the database and return it", async () => {
+      const author = "Diretoria";
+      const title = "Extra extra vai ter bolo!";
+
+      const newAnnouncementData: NewAnnouncement = {
+        title: title,
+        content: "e é de chocolate",
+        author: author,
+        channelType: "teams",
+        status: "draft",
+      };
+
+      const createdAnnouncement = await repository.create({
+        data: newAnnouncementData,
+        context: mockContext,
+      });
+
+      expect(createdAnnouncement).toBeDefined();
+      expect(createdAnnouncement.id).toBeDefined();
+      expect(createdAnnouncement.title).toBe(title);
+      expect(createdAnnouncement.deletedAt).toBeNull();
+
+      const foundInDb = await database
+        .select()
+        .from(announcementsTable)
+        .where(eq(announcementsTable.id, createdAnnouncement.id));
+
+      expect(foundInDb).toHaveLength(1);
+      expect(foundInDb[0].author).toBe(author);
+    });
+  });
+
+  describe("softDelete", () => {
+    it("should set the deletedAt field and return true for an existing, non-deleted announcement", async () => {
+      const [announcementToDelele] = await database
+        .select()
+        .from(announcementsTable)
+        .where(eq(announcementsTable.title, "Chamado 1"));
+
+      const wasDeleted = await repository.softDelete({
+        id: announcementToDelele.id,
+        context: mockContext,
+      });
+
+      expect(wasDeleted).toBe(true);
+
+      const foundAfterDelete = await database
+        .select()
+        .from(announcementsTable)
+        .where(eq(announcementsTable.id, announcementToDelele.id));
+
+      expect(foundAfterDelete[0].deletedAt).not.toBeNull();
+      expect(foundAfterDelete[0].deletedAt).toBeInstanceOf(Date);
+    });
+
+    it("should return false when trying to delete a non-existent announcement", async () => {
+      const nonExistentId = randomUUID();
+
+      const wasDeleted = await repository.softDelete({
+        id: nonExistentId,
+        context: mockContext,
+      });
+
+      expect(wasDeleted).toBe(false);
+    });
+
+    it("should return false when trying to delete an already deleted announcement", async () => {
+      const [deletedAnnouncement] = await database
+        .select()
+        .from(announcementsTable)
+        .where(eq(announcementsTable.title, "Chamado 5"));
+
+      const wasDeleted = await repository.softDelete({
+        id: deletedAnnouncement.id,
+        context: mockContext,
+      });
+
+      expect(wasDeleted).toBe(false);
     });
   });
 });

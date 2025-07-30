@@ -118,7 +118,7 @@ export class AnnouncementsService implements IAnnouncementsService {
         context: args.context,
       });
 
-      if (!existing || existing.deletedAt) {
+      if (!existing) {
         logger.warn(
           { announcementId: args.id },
           "Attempted to update an announcement that was not found."
@@ -157,7 +157,7 @@ export class AnnouncementsService implements IAnnouncementsService {
     try {
       const annoucement = await this.repository.getById({ id, context });
 
-      if (!annoucement || annoucement.deletedAt) {
+      if (!annoucement) {
         throw new AppError("Chamado não encontrado", 404);
       }
 
