@@ -1,8 +1,9 @@
-import { Logger } from "pino";
-import NodeCache from "node-cache";
 import { AppError } from "@src/shared/errors";
 import { cacheConfig } from "@configs/cache.config";
-import { IIntegrationsService } from "./integrations.interfaces";
+import {
+  GetDataServiceArgs,
+  IIntegrationsService,
+} from "./integrations.interfaces";
 import axios, { AxiosError } from "axios";
 import { ICacheService } from "@src/shared/services/cache/cache.interfaces";
 import { retry } from "@src/shared/utils/retry.util";
@@ -10,10 +11,10 @@ import { retry } from "@src/shared/utils/retry.util";
 const CACHE_KEY = cacheConfig.services.integrations.key;
 
 export class IntegrationsService implements IIntegrationsService {
-  constructor(private logger: Logger, private cache: ICacheService) {}
+  constructor(private cache: ICacheService) {}
 
-  async getExternalData(url: string): Promise<any> {
-    const logger = this.logger.child({
+  async getExternalData({ url, context }: GetDataServiceArgs): Promise<any> {
+    const logger = context.logger.child({
       operation: "getExternalData",
       component: "IntegrationsService",
     });

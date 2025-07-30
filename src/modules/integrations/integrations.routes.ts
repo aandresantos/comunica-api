@@ -5,7 +5,7 @@ export const integrationsRoutes = (app: FastifyInstance) => {
   const controller = buildIntegrationsModule();
 
   app.get("/", async (req, reply) => {
-    const { body, statusCode } = await controller.getData();
+    const { body, statusCode } = await controller.getData(req);
 
     return reply.status(statusCode).send(body);
   });

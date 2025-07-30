@@ -1,4 +1,3 @@
-import { logger } from "@src/lib/configs/logger.config";
 import { IntegrationsController } from "./integrations.controller";
 import { IntegrationsService } from "./integrations.service";
 import { NodeCacheService } from "@src/shared/services/cache/node-cache.service";
@@ -8,7 +7,7 @@ export function buildIntegrationsModule() {
   const cache = new NodeCacheService({
     ttlInSeconds: cacheConfig.services.integrations.ttl,
   });
-  const service = new IntegrationsService(logger, cache);
+  const service = new IntegrationsService(cache);
   const controller = new IntegrationsController(service);
 
   return controller;
