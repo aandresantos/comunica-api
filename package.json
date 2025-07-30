@@ -10,6 +10,7 @@
     "start": "node dist/server.js",
     "test": "jest --runInBand",
     "test:watch": "jest --watchAll --runInBand",
+    "test:coverage": "jest --coverage",
     "db:generate": "drizzle-kit generate --config=src/lib/configs/drizzle.config.ts",
     "db:migrate": "drizzle-kit migrate --config=src/lib/configs/drizzle.config.ts",
     "db:push": "drizzle-kit push:pg --config=src/lib/configs/drizzle.config.ts"

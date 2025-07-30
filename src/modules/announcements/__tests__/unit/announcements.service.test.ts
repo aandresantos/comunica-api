@@ -6,9 +6,10 @@ import {
 } from "../../announcements.interfaces";
 import pino from "pino";
 import { AnnouncementsService } from "../../announcements.service";
-import { Announcement } from "../../announcements.schema";
+import { Announcement, NewAnnouncement } from "../../announcements.schema";
 import { AppError } from "@src/shared/errors";
 import { ListAnnouncementsQuery } from "../../dtos/list-announcements-query.dto";
+import { CreateAnnouncement } from "../../dtos/create-annoucement.dto";
 
 describe("AnnouncementsService - Unit Tests", () => {
   let service: IAnnouncementsService;
@@ -209,6 +210,62 @@ describe("AnnouncementsService - Unit Tests", () => {
 
       await expect(
         service.listAnnouncements({ query: {}, context: mockContext })
+      ).rejects.toThrow(databaseError);
+    });
+  });
+
+  describe("createAnnouncement", () => {
+    it("should call the repository with the correct data and return the created announcement", async () => {
+      const inputAnnouncement: NewAnnouncement = {
+        title: "Novo Chamado",
+        content: "Segunda feira tem bolo de graça",
+        author: "diretoria",
+        channelType: "email",
+      };
+
+      const expectedCreatedAnnouncement: Announcement = {
+        ...inputAnnouncement,
+        id: "new-valid-uuid",
+        status: "draft",
+        createdAt: new Date(),
+        deletedAt: null,
+        sentAt: null,
+      };
+
+      mockRepository.create.mockResolvedValue(expectedCreatedAnnouncement);
+
+      const result = await service.createAnnouncement({
+        data: inputAnnouncement,
+        context: mockContext,
+      });
+
+      expect(result).toEqual(expectedCreatedAnnouncement);
+      expect(mockRepository.create).toHaveBeenCalledTimes(1);
+      expect(mockRepository.create).toHaveBeenCalledWith({
+        data: inputAnnouncement,
+        context: mockContext,
+      });
+    });
+
+    it("should re-throw an error if the repository fails to create the announcement", async () => {
+      const inputAnnouncement: NewAnnouncement = {
+        title: "Novo Chamado",
+        content: "Férias todo mês",
+        author: "diretoria",
+        channelType: "email",
+      };
+
+      const databaseError = new Error(
+        "Chaves duplicads violam a constraint única"
+      );
+
+      mockRepository.create.mockRejectedValue(databaseError);
+
+      await expect(
+        service.createAnnouncement({
+          data: inputAnnouncement,
+          context: mockContext,
+        })
       ).rejects.toThrow(databaseError);
     });
   });
