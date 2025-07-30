@@ -7,8 +7,6 @@ export const validateBody =
     try {
       await schema.parseAsync(req.body);
     } catch (error) {
-      console.log(error);
-
       if (error instanceof ZodError) {
         throw new ZodError(error.issues);
       }

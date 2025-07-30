@@ -1,4 +1,4 @@
-import fastify, { FastifyError, FastifyReply, FastifyRequest } from "fastify";
+import fastify, { FastifyReply, FastifyRequest } from "fastify";
 import fastifySwagger from "@fastify/swagger";
 import fastifySwaggerUi from "@fastify/swagger-ui";
 import fCors from "@fastify/cors";
@@ -19,6 +19,10 @@ import { authConfig } from "@configs/auth.config";
 import { database } from "@configs/database.config";
 
 import { publicRoutesMiddleware } from "@middlewares/auth.middleware";
+import {
+  responseError,
+  responseSuccess,
+} from "@shared/helpers/response.helpers";
 
 export const buildApp = () => {
   const app = fastify({
@@ -91,11 +95,15 @@ export const buildApp = () => {
     try {
       await database.execute(sql`SELECT 1`);
 
-      reply.status(200).send({ status: "ok", db: "connected" });
+      const { body, statusCode } = responseSuccess({ db: "connected" });
+
+      reply.status(statusCode).send(body);
     } catch (error) {
       req.log.error(error, "Health check failed: database connection error.");
 
-      reply.status(503).send({ status: "error", db: "disconnected" });
+      const { statusCode, body } = responseError(["db disconnected"], 503);
+
+      reply.status(statusCode).send(body);
     }
   });
 
