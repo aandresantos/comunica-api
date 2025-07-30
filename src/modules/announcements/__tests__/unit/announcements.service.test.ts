@@ -8,6 +8,7 @@ import pino from "pino";
 import { AnnouncementsService } from "../../announcements.service";
 import { Announcement } from "../../announcements.schema";
 import { AppError } from "@src/shared/errors";
+import { ListAnnouncementsQuery } from "../../dtos/list-announcements-query.dto";
 
 describe("AnnouncementsService - Unit Tests", () => {
   let service: IAnnouncementsService;
@@ -104,6 +105,111 @@ describe("AnnouncementsService - Unit Tests", () => {
       ).rejects.toThrow(databaseError);
 
       expect(mockRepository.getById).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("listAnnouncements", () => {
+    it("should correctly map all filters and call the repository", async () => {
+      const queryFromController: ListAnnouncementsQuery = {
+        status: "enviado",
+        autor: "diretoria",
+        tipo_canal: "slack",
+        data_inicial: new Date("2024-08-01T00:00:00.000Z"),
+        data_final: new Date("2024-08-31T23:59:59.000Z"),
+      };
+
+      const expectedRepoFilters = {
+        autor: "diretoria",
+        tipo_canal: "slack",
+        status: "sent",
+        data_inicial: "2024-08-01T00:00:00.000Z",
+        data_final: "2024-08-31T23:59:59.000Z",
+      };
+
+      const fakeResult: { total: number; data: Announcement[] } = {
+        total: 1,
+        data: [
+          {
+            id: "valid-uuid",
+            title: "Chamado para os colaboradores",
+            content: "Todo dia é feriado",
+            channelType: "slack",
+            status: "draft",
+            author: "diretoria",
+            createdAt: new Date("2025-07-28T22:09:36.198Z"),
+            sentAt: null,
+            deletedAt: null,
+          },
+        ],
+      };
+
+      mockRepository.getAll.mockResolvedValue(fakeResult);
+
+      const result = await service.listAnnouncements({
+        query: queryFromController,
+        context: mockContext,
+      });
+
+      expect(result).toEqual(fakeResult);
+      expect(mockRepository.getAll).toHaveBeenCalledTimes(1);
+      expect(mockRepository.getAll).toHaveBeenCalledWith(
+        expect.objectContaining({
+          query: expect.objectContaining(expectedRepoFilters),
+          context: mockContext,
+        })
+      );
+    });
+
+    it("should call the repository with default pagination values when the query is empty", async () => {
+      const emptyQuery = {};
+      const fakeResult: { total: number; data: Announcement[] } = {
+        total: 10,
+        data: Array.from({ length: 10 }).map((_, i) => ({
+          id: "valid-uuid-" + i,
+          title: "Chamado " + i,
+          content: "Conteudo " + i,
+          channelType: "slack",
+          status: "draft",
+          author: "author." + i,
+          createdAt: new Date("2025-07-28T22:09:36.198Z"),
+          sentAt: null,
+          deletedAt: null,
+        })),
+      };
+
+      mockRepository.getAll.mockResolvedValue(fakeResult);
+
+      await service.listAnnouncements({
+        query: emptyQuery,
+        context: mockContext,
+      });
+
+      expect(mockRepository.getAll).toHaveBeenCalledTimes(1);
+      expect(mockRepository.getAll).toHaveBeenCalledWith(
+        expect.objectContaining({ context: mockContext })
+      );
+    });
+
+    it("should return an empty result when the repository finds nothing", async () => {
+      const emptyQuery = {};
+      const emptyResult = { total: 0, data: [] };
+      mockRepository.getAll.mockResolvedValue(emptyResult);
+
+      const result = await service.listAnnouncements({
+        query: emptyQuery,
+        context: mockContext,
+      });
+
+      expect(result).toEqual(emptyResult);
+    });
+
+    it("should re-throw an error if the repository fails unexpectedly", async () => {
+      const databaseError = new Error("Erro de conexão");
+      mockRepository.getAll.mockRejectedValue(databaseError);
+
+      await expect(
+        service.listAnnouncements({ query: {}, context: mockContext })
+      ).rejects.toThrow(databaseError);
     });
   });
 });
