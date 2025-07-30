@@ -13,7 +13,7 @@ const CACHE_KEY = cacheConfig.services.integrations.key;
 export class IntegrationsService implements IIntegrationsService {
   constructor(private cache: ICacheService) {}
 
-  async getExternalData({ url, context }: GetDataServiceArgs): Promise<any> {
+  async getExternalData<T>({ url, context }: GetDataServiceArgs): Promise<T> {
     const logger = context.logger.child({
       operation: "getExternalData",
       component: "IntegrationsService",
@@ -24,7 +24,7 @@ export class IntegrationsService implements IIntegrationsService {
       "Starting external data retrieval process."
     );
 
-    const cached = await this.cache.get(CACHE_KEY);
+    const cached = await this.cache.get<T>(CACHE_KEY);
 
     if (cached) {
       logger.info({ cacheKey: CACHE_KEY }, "Cache hit. Returning fresh data.");
@@ -63,9 +63,9 @@ export class IntegrationsService implements IIntegrationsService {
 
       logger.info({ cacheKey: CACHE_KEY }, "Data has been set in cache.");
 
-      return data;
+      return data as T;
     } catch (err) {
-      const fallbackData = await this.cache.get(CACHE_KEY);
+      const fallbackData = await this.cache.get<T>(CACHE_KEY);
 
       if (fallbackData) {
         logger.warn(

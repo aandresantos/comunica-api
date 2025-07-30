@@ -1,6 +1,9 @@
 import { FastifyRequest } from "fastify";
 
-import { IIntegrationsService } from "./integrations.interfaces";
+import {
+  IIntegrationsService,
+  JsonPlaceholderPost,
+} from "./integrations.interfaces";
 import {
   responseError,
   responseNoContent,
@@ -19,7 +22,7 @@ export class IntegrationsController {
 
     logger.info("Request received to fetch external data.");
 
-    const data = await this.service.getExternalData({
+    const data = await this.service.getExternalData<JsonPlaceholderPost>({
       url: "https://jsonplaceholder.typicode.com/posts",
       context: { logger },
     });

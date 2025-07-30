@@ -1,6 +1,5 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import { z, ZodError } from "zod";
-import { responseError } from "../helpers/response.helpers";
 
 export function validateIdParam() {
   return async (req: FastifyRequest, reply: FastifyReply) => {
