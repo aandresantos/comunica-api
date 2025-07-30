@@ -23,7 +23,10 @@ export async function announcementsRoutes(app: FastifyInstance) {
 
   app.get(
     "/",
-    { schema: { querystring: listAnnouncementsQueryDto } },
+    {
+      schema: { querystring: listAnnouncementsQueryDto },
+      config: { rateLimit: { max: 10, timeWindow: "1 minute" } },
+    },
     async (req, reply) => {
       const { body, statusCode } = await controller.getAll(
         req as FastifyRequest<{ Querystring: ListAnnouncementsQuery }>
@@ -33,13 +36,20 @@ export async function announcementsRoutes(app: FastifyInstance) {
     }
   );
 
-  app.get("/:id", { preHandler: validateIdParam() }, async (req, reply) => {
-    const { body, statusCode } = await controller.getById(
-      req as FastifyRequest<{ Params: { id: string } }>
-    );
+  app.get(
+    "/:id",
+    {
+      preHandler: validateIdParam(),
+      config: { rateLimit: { max: 10, timeWindow: "1 minute" } },
+    },
+    async (req, reply) => {
+      const { body, statusCode } = await controller.getById(
+        req as FastifyRequest<{ Params: { id: string } }>
+      );
 
-    return reply.status(statusCode).send(body);
-  });
+      return reply.status(statusCode).send(body);
+    }
+  );
 
   app.post(
     "/",
@@ -62,6 +72,7 @@ export async function announcementsRoutes(app: FastifyInstance) {
           id: z.uuid({ message: "O ID do parâmetro deve ser um UUID válido." }),
         }),
       },
+      config: { rateLimit: { max: 10, timeWindow: "1 minute" } },
     },
     async (req, reply) => {
       const { body, statusCode } = await controller.update(
@@ -75,11 +86,18 @@ export async function announcementsRoutes(app: FastifyInstance) {
     }
   );
 
-  app.delete("/:id", { preHandler: validateIdParam() }, async (req, reply) => {
-    const { body, statusCode } = await controller.softDelete(
-      req as FastifyRequest<{ Params: { id: string } }>
-    );
+  app.delete(
+    "/:id",
+    {
+      preHandler: validateIdParam(),
+      config: { rateLimit: { max: 10, timeWindow: "1 minute" } },
+    },
+    async (req, reply) => {
+      const { body, statusCode } = await controller.softDelete(
+        req as FastifyRequest<{ Params: { id: string } }>
+      );
 
-    return reply.status(statusCode).send(body);
-  });
+      return reply.status(statusCode).send(body);
+    }
+  );
 }

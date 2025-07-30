@@ -3,7 +3,7 @@ import fastifySwagger from "@fastify/swagger";
 import fastifySwaggerUi from "@fastify/swagger-ui";
 import fCors from "@fastify/cors";
 import fjwt from "@fastify/jwt";
-import fCookie from "@fastify/cookie";
+import fRateLimit from "@fastify/rate-limit";
 import { sql } from "drizzle-orm";
 
 import {
@@ -17,7 +17,7 @@ import { integrationsRoutes } from "@integrations/integrations.routes";
 import { announcementsRoutes } from "@announcements/announcements.routes";
 
 import { errorHandler } from "@shared/handlers/error.handler";
-import { ForbiddenError, UnauthorizedError } from "@shared/errors";
+import { AppError, ForbiddenError, UnauthorizedError } from "@shared/errors";
 
 import { loggerOpts } from "@configs/logger.config";
 import { swaggerConfig } from "@configs/swagger.config";
@@ -33,6 +33,7 @@ import { publicRoutesMiddleware } from "./shared/middlewares/auth.middleware";
 export const buildApp = () => {
   const app = fastify({
     logger: loggerOpts,
+    trustProxy: true,
   }).withTypeProvider<ZodTypeProvider>();
 
   app.addHook("preValidation", (req, reply) =>
@@ -62,6 +63,28 @@ export const buildApp = () => {
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
+  });
+
+  app.register(fRateLimit, {
+    max: 100,
+    timeWindow: "1 minute",
+    errorResponseBuilder: (req, ctx) => {
+      throw new AppError(
+        `Limite de requisições excedido. Você pode fazer ${ctx.max} requisições a cada 1 minuto. Disponibilidade em: ${ctx.after}.`,
+        ctx.statusCode
+      );
+    },
+
+    addHeadersOnExceeding: {
+      "x-ratelimit-limit": true,
+      "x-ratelimit-remaining": true,
+      "x-ratelimit-reset": true,
+    },
+    addHeaders: {
+      "x-ratelimit-limit": true,
+      "x-ratelimit-remaining": true,
+      "x-ratelimit-reset": true,
+    },
   });
 
   app.register(fjwt, { secret: authConfig.jwt.secret });

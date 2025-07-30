@@ -8,7 +8,10 @@ export const authRoutes = (app: FastifyInstance) => {
 
   app.post(
     "/register",
-    { schema: { body: registerDto } },
+    {
+      schema: { body: registerDto },
+      config: { rateLimit: { max: 5, timeWindow: "1 minute" } },
+    },
     async (req, reply) => {
       const { body, statusCode } = await controller.register(
         req as FastifyRequest<{ Body: RegisterInput }>,
@@ -19,12 +22,19 @@ export const authRoutes = (app: FastifyInstance) => {
     }
   );
 
-  app.post("/login", { schema: { body: loginDto } }, async (req, reply) => {
-    const { body, statusCode } = await controller.login(
-      req as FastifyRequest<{ Body: LoginInput }>,
-      reply
-    );
+  app.post(
+    "/login",
+    {
+      schema: { body: loginDto },
+      config: { rateLimit: { max: 5, timeWindow: "1 minute" } },
+    },
+    async (req, reply) => {
+      const { body, statusCode } = await controller.login(
+        req as FastifyRequest<{ Body: LoginInput }>,
+        reply
+      );
 
-    return reply.status(statusCode).send(body);
-  });
+      return reply.status(statusCode).send(body);
+    }
+  );
 };
