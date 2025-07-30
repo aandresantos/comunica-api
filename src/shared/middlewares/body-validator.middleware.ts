@@ -8,7 +8,7 @@ export const validateBody =
       await schema.parseAsync(req.body);
     } catch (error) {
       if (error instanceof ZodError) {
-        throw new ZodError(error.issues);
+        throw error;
       }
 
       throw new AppError("Há campos inválidos no body", 500);

@@ -13,16 +13,16 @@ import {
   CreateAnnouncement,
   createAnnouncementDto,
 } from "./dtos/create-annoucement.dto";
-import { validateBody } from "@middlewares/body-validator.middleware";
-import { validateQuery } from "@middlewares/query-validator.middleware";
 import { validateIdParam } from "@middlewares/param-validator.middleware";
+import { AnnouncementViewModel } from "./annoucements.mapper";
+import { ControllerResponse } from "@src/shared/types/base-response.types";
 
 export async function announcementsRoutes(app: FastifyInstance) {
   const controller = buildAnnouncementsModule();
 
   app.get(
     "/",
-    { preHandler: validateQuery(listAnnouncementsQueryDto) },
+    { schema: { querystring: listAnnouncementsQueryDto } },
     async (req, reply) => {
       const { body, statusCode } = await controller.getAll(
         req as FastifyRequest<{ Querystring: ListAnnouncementsQuery }>
@@ -42,8 +42,8 @@ export async function announcementsRoutes(app: FastifyInstance) {
 
   app.post(
     "/",
-    { preHandler: validateBody(createAnnouncementDto) },
-    async (req, reply) => {
+    { schema: { body: createAnnouncementDto } },
+    async (req, reply): Promise<ControllerResponse<AnnouncementViewModel>> => {
       const { body, statusCode } = await controller.create(
         req as FastifyRequest<{ Body: CreateAnnouncement }>
       );
@@ -54,7 +54,10 @@ export async function announcementsRoutes(app: FastifyInstance) {
 
   app.put(
     "/:id",
-    { preHandler: [validateIdParam(), validateBody(updateAnnouncementDto)] },
+    {
+      preHandler: validateIdParam(),
+      schema: { body: updateAnnouncementDto },
+    },
     async (req, reply) => {
       const { body, statusCode } = await controller.update(
         req as FastifyRequest<{

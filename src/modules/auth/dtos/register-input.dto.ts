@@ -6,7 +6,7 @@ export const registerDto = z.object({
     .nonempty({ error: "Email é obrigatório" }),
   password: z
     .string({ error: "Password deve ser uma string" })
-    .min(6, { error: "Password deve ter no mínimo 6 caracteres" })
+    .min(5, { error: "Password deve ter no mínimo 6 caracteres" })
     .nonempty({ error: "Password não pode ser vazio" }),
 });
 

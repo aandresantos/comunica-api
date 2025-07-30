@@ -6,6 +6,12 @@ import fjwt from "@fastify/jwt";
 import fCookie from "@fastify/cookie";
 import { sql } from "drizzle-orm";
 
+import {
+  serializerCompiler,
+  validatorCompiler,
+  ZodTypeProvider,
+} from "fastify-type-provider-zod";
+
 import { authRoutes } from "@auth/auth.routes";
 import { integrationsRoutes } from "@integrations/integrations.routes";
 import { announcementsRoutes } from "@announcements/announcements.routes";
@@ -18,16 +24,20 @@ import { swaggerConfig } from "@configs/swagger.config";
 import { authConfig } from "@configs/auth.config";
 import { database } from "@configs/database.config";
 
-import { publicRoutesMiddleware } from "@middlewares/auth.middleware";
 import {
   responseError,
   responseSuccess,
 } from "@shared/helpers/response.helpers";
+import { publicRoutesMiddleware } from "./shared/middlewares/auth.middleware";
 
 export const buildApp = () => {
   const app = fastify({
     logger: loggerOpts,
-  });
+  }).withTypeProvider<ZodTypeProvider>();
+
+  app.addHook("preValidation", (req, reply) =>
+    publicRoutesMiddleware(app, req, reply)
+  );
 
   app.register(fCors, {
     origin: (origin, callback) => {
@@ -54,18 +64,7 @@ export const buildApp = () => {
     allowedHeaders: ["Content-Type", "Authorization"],
   });
 
-  app.register(fCookie, {
-    secret: authConfig.cookie.secret,
-    hook: "preHandler",
-  });
-
-  app.register(fjwt, {
-    secret: authConfig.jwt.secret,
-    cookie: {
-      cookieName: "access_token",
-      signed: true,
-    },
-  });
+  app.register(fjwt, { secret: authConfig.jwt.secret });
 
   app.decorate(
     "authenticate",
@@ -78,18 +77,22 @@ export const buildApp = () => {
     }
   );
 
-  app.addHook(
-    "preHandler",
-    async (req, reply) => await publicRoutesMiddleware(app, req, reply)
-  );
-
   app.setErrorHandler(errorHandler);
   app.register(fastifySwagger, swaggerConfig);
 
+  app.setValidatorCompiler(validatorCompiler);
+  app.setSerializerCompiler(serializerCompiler);
+
   app.register(fastifySwaggerUi, { routePrefix: "/docs" });
   app.register(authRoutes, { prefix: "/auth" });
-  app.register(announcementsRoutes, { prefix: "/chamados" });
-  app.register(integrationsRoutes, { prefix: "/integracao/dados" });
+  app.register(announcementsRoutes, {
+    prefix: "/chamados",
+    preValidation: [app.authenticate],
+  });
+  app.register(integrationsRoutes, {
+    prefix: "/integracao/dados",
+    preValidation: [app.authenticate],
+  });
 
   app.get("/health", async (req, reply) => {
     try {

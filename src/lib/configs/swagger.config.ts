@@ -1,3 +1,4 @@
+import { jsonSchemaTransform } from "fastify-type-provider-zod";
 import { config } from "./app.config";
 
 export const swaggerConfig = {
@@ -8,5 +9,16 @@ export const swaggerConfig = {
       title: "Comunica API",
       description: "Documentação da Comunica API com CRUD completo.",
     },
+
+    securityDefinitions: {
+      bearerAuth: {
+        type: "apiKey" as const,
+        name: "Authorization",
+        in: "header",
+      },
+    },
+
+    security: [{ bearerAuth: [] }],
   },
+  transform: jsonSchemaTransform,
 };

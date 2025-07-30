@@ -4,6 +4,7 @@ import { randomUUID, UUID } from "crypto";
 import { AppError } from "@shared/errors";
 import { authConfig } from "@configs/auth.config";
 import {
+  AuthResponse,
   IAuthService,
   LoginUserServiceArgs,
   RegisterUserServiceArgs,
@@ -30,9 +31,7 @@ export class AuthService implements IAuthService {
     private configs: (typeof authConfig)["jwt"]
   ) {}
 
-  async register(
-    args: RegisterUserServiceArgs
-  ): Promise<{ accessToken: string }> {
+  async register(args: RegisterUserServiceArgs): Promise<AuthResponse> {
     try {
       const { email, password } = args.data;
 
@@ -55,7 +54,11 @@ export class AuthService implements IAuthService {
         { expiresIn: this.configs.expiresIn }
       );
 
-      return { accessToken };
+      return {
+        expiresIn: this.configs.expiresIn as number,
+        tokenType: "Bearer" as const,
+        accessToken: accessToken,
+      };
     } catch (err) {
       if (err instanceof AppError) {
         throw err;
@@ -65,27 +68,35 @@ export class AuthService implements IAuthService {
     }
   }
 
-  async login(args: LoginUserServiceArgs) {
-    const { email, password } = args.data;
+  async login(args: LoginUserServiceArgs): Promise<AuthResponse> {
+    try {
+      const { email, password } = args.data;
 
-    const user = this.findUser(email);
+      const user = this.findUser(email);
 
-    if (!user) {
-      throw new AppError("Usuário não encontrado", 400);
+      if (!user) {
+        throw new AppError("Usuário não encontrado", 400);
+      }
+
+      const isValid = await bcrypt.compare(password, user.password);
+
+      if (!isValid) {
+        throw new AppError("Credenciais inválidas", 401);
+      }
+
+      const accessToken = this.fastify.jwt.sign(
+        { sub: user.id, email },
+        { expiresIn: this.configs.expiresIn }
+      );
+
+      return {
+        expiresIn: this.configs.expiresIn as number,
+        tokenType: "Bearer" as const,
+        accessToken: accessToken,
+      };
+    } catch (err) {
+      throw err;
     }
-
-    const isValid = await bcrypt.compare(password, user.password);
-
-    if (!isValid) {
-      throw new AppError("Credenciais inválidas", 401);
-    }
-
-    const accessToken = this.fastify.jwt.sign(
-      { sub: user.id, email },
-      { expiresIn: this.configs.expiresIn }
-    );
-
-    return { accessToken };
   }
 
   userExists(email: string): boolean {

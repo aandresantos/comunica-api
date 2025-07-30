@@ -4,8 +4,8 @@ import { LoginInput } from "./dtos/login-input.dto";
 import { JwtPayload } from "jsonwebtoken";
 
 export interface IAuthService {
-  register(args: RegisterUserServiceArgs): Promise<{ accessToken: string }>;
-  login(args: LoginUserServiceArgs): Promise<{ accessToken: string }>;
+  register(args: RegisterUserServiceArgs): Promise<AuthResponse>;
+  login(args: LoginUserServiceArgs): Promise<AuthResponse>;
 }
 
 export interface CallContext {
@@ -22,4 +22,10 @@ export interface RegisterUserServiceArgs extends ContextualArgs {
 
 export interface LoginUserServiceArgs extends ContextualArgs {
   data: LoginInput;
+}
+
+export interface AuthResponse {
+  tokenType: "Bearer";
+  accessToken: string;
+  expiresIn: number;
 }

@@ -5,7 +5,4 @@ export const authConfig = {
     secret: process.env.JWT_SECRET || "123",
     expiresIn: "1h" as SignOptions["expiresIn"],
   },
-  cookie: {
-    secret: process.env.COOKIE_SECRET || "345",
-  },
 };

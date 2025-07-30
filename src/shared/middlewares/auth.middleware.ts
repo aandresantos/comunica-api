@@ -8,9 +8,7 @@ export const publicRoutesMiddleware = async (
 ) => {
   const url = request.raw.url;
 
-  if (!url) {
-    return;
-  }
+  if (!url) return;
 
   const publicRoutes = ["/docs", "/health", "/auth/login", "/auth/register"];
 
