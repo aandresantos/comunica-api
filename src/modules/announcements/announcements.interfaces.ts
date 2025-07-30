@@ -72,7 +72,7 @@ export interface CreateRepoArgs extends ContextualArgs {
 
 export interface UpdateRepoArgs extends ContextualArgs {
   id: string;
-  data: Partial<Announcement>;
+  data: Partial<Omit<Announcement, "id" | "createdAt">>;
 }
 
 export interface DeleteRepoArgs extends ContextualArgs {

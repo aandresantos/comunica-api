@@ -113,7 +113,10 @@ export class AnnouncementsService implements IAnnouncementsService {
     });
 
     try {
-      const existing = await this.repository.getById(args);
+      const existing = await this.repository.getById({
+        id: args.id,
+        context: args.context,
+      });
 
       if (!existing || existing.deletedAt) {
         logger.warn(
@@ -152,13 +155,13 @@ export class AnnouncementsService implements IAnnouncementsService {
     });
 
     try {
-      const annoucement = await this.repository.getById(args);
+      const annoucement = await this.repository.getById({ id, context });
 
       if (!annoucement || annoucement.deletedAt) {
         throw new AppError("Chamado não encontrado", 404);
       }
 
-      const wasDeleted = await this.repository.softDelete(args);
+      const wasDeleted = await this.repository.softDelete({ id, context });
 
       if (!wasDeleted) {
         throw new AppError("Não foi possível deletar o Chamado");
