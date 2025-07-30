@@ -14,6 +14,9 @@
       "@middlewares/*": ["./shared/middlewares/*"],
       "@handlers/*": ["./shared/handlers/*"],
       "@announcements/*": ["./modules/announcements/*"],
+      "@integrations/*": ["./modules/integrations/*"],
+      "@auth/*": ["./modules/auth/*"],
+
     },
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,

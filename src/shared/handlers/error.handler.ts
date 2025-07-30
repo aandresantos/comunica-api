@@ -1,6 +1,6 @@
 import { ZodError } from "zod";
 import { FastifyError, FastifyReply, FastifyRequest } from "fastify";
-import { AppError, UnauthorizedError } from "../errors";
+import { AppError, ForbiddenError, UnauthorizedError } from "../errors";
 
 import { responseError } from "../helpers/response.helpers";
 import { BaseResponse } from "../types/base-response.types";
@@ -10,7 +10,7 @@ export function errorHandler(
   _: FastifyRequest,
   reply: FastifyReply
 ) {
-  if (error instanceof UnauthorizedError) {
+  if (error instanceof UnauthorizedError || error instanceof ForbiddenError) {
     const { body, statusCode } = responseError(
       [error.message],
       error.statusCode
