@@ -1,15 +1,16 @@
 import { FastifyBaseLogger } from "fastify";
+import pino from "pino";
 import {
   ContextualArgs,
   IAnnouncementsRepository,
   IAnnouncementsService,
 } from "../../announcements.interfaces";
-import pino from "pino";
 import { AnnouncementsService } from "../../announcements.service";
 import { Announcement, NewAnnouncement } from "../../announcements.schema";
 import { AppError } from "@src/shared/errors";
 import { ListAnnouncementsQuery } from "../../dtos/list-announcements-query.dto";
-import { CreateAnnouncement } from "../../dtos/create-annoucement.dto";
+import { UpdateAnnouncement } from "../../dtos/update-annoucement.dto";
+import { StatusAnnouncementType } from "../../types/announcements.types";
 
 describe("AnnouncementsService - Unit Tests", () => {
   let service: IAnnouncementsService;
@@ -264,6 +265,197 @@ describe("AnnouncementsService - Unit Tests", () => {
       await expect(
         service.createAnnouncement({
           data: inputAnnouncement,
+          context: mockContext,
+        })
+      ).rejects.toThrow(databaseError);
+    });
+  });
+
+  describe("updateAnnouncement", () => {
+    it("should successfully update an existing announcement", async () => {
+      const existingAnnouncement: Announcement = {
+        id: "original-uuid",
+        author: "diretoria",
+        title: "Título original",
+        content: "Conteúdo original",
+        channelType: "teams",
+        status: "draft",
+        createdAt: new Date("2025-07-28T22:09:36.198Z"),
+        sentAt: null,
+        deletedAt: null,
+      };
+
+      const updateDto: UpdateAnnouncement = {
+        status: "enviado",
+        data_envio: new Date(),
+      };
+
+      const mappedAnnouncementForRepo = {
+        status: "sent" as StatusAnnouncementType,
+        sentAt: updateDto.data_envio || null,
+      };
+
+      const expectedResult: Announcement = {
+        ...existingAnnouncement,
+        ...mappedAnnouncementForRepo,
+      };
+
+      mockRepository.getById.mockResolvedValue(existingAnnouncement);
+      mockRepository.update.mockResolvedValue(expectedResult);
+
+      const result = await service.updateAnnouncement({
+        id: "original-uuid",
+        data: updateDto,
+        context: mockContext,
+      });
+
+      expect(result).toEqual(expectedResult);
+      expect(mockRepository.getById).toHaveBeenCalledTimes(1);
+      expect(mockRepository.getById).toHaveBeenCalledWith({
+        id: "original-uuid",
+        context: mockContext,
+      });
+
+      expect(mockRepository.update).toHaveBeenCalledTimes(1);
+      expect(mockRepository.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: "original-uuid",
+          data: mappedAnnouncementForRepo,
+          context: mockContext,
+        })
+      );
+    });
+
+    it("should throw an AppError if the announcement to update has been soft-deleted", async () => {
+      const deletedAnnouncement: Announcement = {
+        id: "deleted-uuid",
+        deletedAt: new Date(),
+      } as Announcement;
+
+      mockRepository.getById.mockResolvedValue(deletedAnnouncement);
+
+      await expect(
+        service.updateAnnouncement({
+          id: "deleted-uuid",
+          data: { titulo: "Segunda feira tem bolo de graça" },
+          context: mockContext,
+        })
+      ).rejects.toThrow(new AppError("Chamado não encontrado", 404));
+
+      expect(mockRepository.update).not.toHaveBeenCalled();
+    });
+
+    it("should re-throw an error if the repository fails on the final update operation", async () => {
+      const existingAnnouncement: Announcement = {
+        id: "existing-uuid",
+        deletedAt: null,
+      } as Announcement;
+
+      mockRepository.getById.mockResolvedValue(existingAnnouncement);
+
+      const databaseError = new Error(
+        "Erro no banco de dados ao atualizar chamado"
+      );
+
+      mockRepository.update.mockRejectedValue(databaseError);
+
+      await expect(
+        service.updateAnnouncement({
+          id: "existing-uuid",
+          data: { titulo: "Segunda feira tem bolo de graça" },
+          context: mockContext,
+        })
+      ).rejects.toThrow(databaseError);
+    });
+  });
+
+  describe("deleteAnnouncement", () => {
+    it("should successfully delete an existing and non-deleted announcement", async () => {
+      const existingAnnouncement: Announcement = {
+        id: "existing-uuid",
+        deletedAt: null,
+      } as Announcement;
+
+      mockRepository.getById.mockResolvedValue(existingAnnouncement);
+
+      mockRepository.softDelete.mockResolvedValue(true);
+
+      await expect(
+        service.deleteAnnouncement({
+          id: "existing-uuid",
+          context: mockContext,
+        })
+      ).resolves.toBeUndefined();
+
+      expect(mockRepository.getById).toHaveBeenCalledTimes(1);
+      expect(mockRepository.softDelete).toHaveBeenCalledTimes(1);
+      expect(mockRepository.softDelete).toHaveBeenCalledWith({
+        id: "existing-uuid",
+        context: mockContext,
+      });
+    });
+
+    it("should throw an AppError if the announcement to delete is not found", async () => {
+      mockRepository.getById.mockResolvedValue(null);
+
+      await expect(
+        service.deleteAnnouncement({ id: "uuid", context: mockContext })
+      ).rejects.toThrow(new AppError("Chamado não encontrado", 404));
+      expect(mockRepository.softDelete).not.toHaveBeenCalled();
+    });
+
+    it("should throw an AppError if the announcement has already been deleted", async () => {
+      const alreadyDeletedAnnouncement: Announcement = {
+        id: "deleted-uuid",
+        deletedAt: new Date(),
+      } as Announcement;
+
+      mockRepository.getById.mockResolvedValue(alreadyDeletedAnnouncement);
+
+      await expect(
+        service.deleteAnnouncement({
+          id: "deleted-uuid",
+          context: mockContext,
+        })
+      ).rejects.toThrow(new AppError("Chamado não encontrado", 404));
+
+      expect(mockRepository.softDelete).not.toHaveBeenCalled();
+    });
+
+    it("should throw an AppError if the repository softDelete operation fails", async () => {
+      const existingAnnouncement: Announcement = {
+        id: "existing-uuid",
+        deletedAt: null,
+      } as Announcement;
+      mockRepository.getById.mockResolvedValue(existingAnnouncement);
+
+      mockRepository.softDelete.mockResolvedValue(false);
+
+      await expect(
+        service.deleteAnnouncement({
+          id: "existing-uuid",
+          context: mockContext,
+        })
+      ).rejects.toThrow(new AppError("Não foi possível deletar o Chamado"));
+
+      expect(mockRepository.getById).toHaveBeenCalledTimes(1);
+      expect(mockRepository.softDelete).toHaveBeenCalledTimes(1);
+    });
+
+    it("should re-throw an error if the repository fails unexpectedly during the delete operation", async () => {
+      const existingAnnouncement: Announcement = {
+        id: "existing-uuid",
+        deletedAt: null,
+      } as Announcement;
+
+      mockRepository.getById.mockResolvedValue(existingAnnouncement);
+
+      const databaseError = new Error("Timeout database");
+      mockRepository.softDelete.mockRejectedValue(databaseError);
+
+      await expect(
+        service.deleteAnnouncement({
+          id: "existing-uuid",
           context: mockContext,
         })
       ).rejects.toThrow(databaseError);
