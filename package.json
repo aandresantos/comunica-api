@@ -6,14 +6,16 @@
   "type": "module",
   "scripts": {
     "dev": "npx tsx watch src/server.ts ",
+    "dev:docker": "tsx watch --clear-screen=false src/server.ts",
     "build": "tsup",
     "start": "node dist/server.js",
     "test": "jest --runInBand",
     "test:watch": "jest --watchAll --runInBand",
     "test:coverage": "jest --coverage",
-    "db:generate": "drizzle-kit generate --config=src/lib/configs/drizzle.config.ts",
-    "db:migrate": "drizzle-kit migrate --config=src/lib/configs/drizzle.config.ts",
-    "db:push": "drizzle-kit push:pg --config=src/lib/configs/drizzle.config.ts"
+    "db:generate": "npx drizzle-kit generate --config=src/lib/configs/drizzle.config.ts",
+    "db:migrate": "npx drizzle-kit migrate  --config=src/lib/configs/drizzle.config.ts",
+    "db:push": "npx drizzle-kit push:pg",
+    "db:seed": "npx tsx src/lib/database/seed.database.ts"
   },
   "engines": {
     "node": ">=20.0.0 <22.17.1"

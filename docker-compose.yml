@@ -1,5 +1,5 @@
 services:
-  comunica_db:
+  database:
     container_name: comunica_db_dev
     image: postgres:16.9
     environment:
@@ -12,7 +12,7 @@ services:
       - comunicadb_data:/var/lib/postgresql/data
     restart: on-failure
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user"]
+      test: ["CMD-SHELL", "pg_isready -U admin"]
       interval: 5m
       timeout: 30s
       retries: 5

@@ -5,6 +5,6 @@ env.config();
 export const config = {
   app: {
     port: Number(process.env.PORT!),
-    host: "0.0.0.0",
+    host: process.env.HOST || "0.0.0.0",
   },
 };

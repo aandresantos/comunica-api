@@ -1,5 +1,13 @@
 node_modules
 dist
 .env
-.env.example
+.env.*
 README.md
+coverage
+pnpm-lock.yaml
+*.log
+Dockerfile
+docker-compose.yml
+.git
+.gitignore
+.vscode
