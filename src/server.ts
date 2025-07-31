@@ -1,4 +1,3 @@
-import Fastify, { FastifyInstance } from "fastify";
 import { buildApp } from "./app";
 import { config } from "./lib/configs/app.config";
 
