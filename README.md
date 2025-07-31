@@ -152,6 +152,16 @@ O projeto utiliza Jest para os testes, com uma separação clara entre testes un
   pnpm test:coverage
   ```
 
+## Produção
+
+Para conseguirmos testar localmente o container com a API pronta para produção podemos rodar:
+
+```
+ ./build.prod.sh
+```
+
+**OBS:** A API em PROD bloqueia o CORS então é necessário definir um Header Origin com `http://localhost:5173`
+
 ## Documentatação
 
 https://www.postman.com/flight-cosmologist-73669498/workspace/comunica-api-public-env/collection/41855606-d711bc44-eb03-4127-89be-df0c70383f8d?action=share&source=copy-link&creator=41855606

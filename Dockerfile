@@ -15,6 +15,8 @@ RUN pnpm build
 
 FROM node:20.19-alpine3.22 AS production
 
+ENV NODE_ENV=production
+
 WORKDIR /app
 
 RUN npm install -g pnpm
